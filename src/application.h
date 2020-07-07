@@ -21,6 +21,7 @@ typedef struct
 
     GLFWwindow* glfw_window;
     VkInstance vk_instance;
+    VkPhysicalDevice vk_physical_device;
 
     vulkan_debugging_mode_t vulkan_debugging_mode;
     VkDebugUtilsMessengerEXT debug_messenger;

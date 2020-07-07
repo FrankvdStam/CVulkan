@@ -166,13 +166,36 @@ void create_vulkan_instance(application_t* application)
     string_list_free(&required_extensions);
 }
 
+void pick_physical_device(application_t* application)
+{
+    //Get the devices
+    uint32_t device_count = 0;
+    vkEnumeratePhysicalDevices(application->vk_instance, &device_count, NULL);
+    VkPhysicalDevice* devices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * device_count);
+    vkEnumeratePhysicalDevices(application->vk_instance, &device_count, devices);
 
+    if(device_count == 0 || devices[0] == VK_NULL_HANDLE)
+    {
+        printf("No devices with vulkan support found.");
+        exit(1);
+    }
+
+    application->vk_physical_device = devices[0];
+    free(devices);
+    
+    VkPhysicalDeviceProperties deviceProperties;
+    vkGetPhysicalDeviceProperties(application->vk_physical_device, &deviceProperties);
+
+    printf("Picked device %s\n", deviceProperties.deviceName);
+
+}
 
 
 void init_vulkan(application_t* application)
 {
     create_vulkan_instance(application);
     setup_debug_message_callback(application);
+    pick_physical_device(application);
 }
 
 
@@ -180,7 +203,11 @@ void init_vulkan(application_t* application)
 //Cleanup
 void application_cleanup(application_t* application)
 {
-    DestroyDebugUtilsMessengerEXT(application->vk_instance, application->debug_messenger, NULL);
+    if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
+    {
+        DestroyDebugUtilsMessengerEXT(application->vk_instance, application->debug_messenger, NULL);
+    }
+
     vkDestroyInstance(application->vk_instance, NULL);
 
     glfwDestroyWindow(application->glfw_window);
