@@ -4,7 +4,7 @@ project(CVulkan C)
 set(CMAKE_C_STANDARD 11)
 
 
-add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c)
+add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/extensions.c src/extensions.h src/utility/string_list.c src/utility/string_list.h)
 
 
 include_directories(C:/VulkanSDK/1.2.141.2/include/)

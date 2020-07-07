@@ -7,21 +7,28 @@
 
 #include "common.h"
 
-#define VULKAN_DEBUG
+typedef enum
+{
+    vulkan_debugging_enabled,
+    vulkan_debugging_disabled,
+} vulkan_debugging_mode_t;
 
 typedef struct
 {
     char* title;
     int window_with;
     int window_height;
+
     GLFWwindow* glfw_window;
     VkInstance vk_instance;
+
+    vulkan_debugging_mode_t vulkan_debugging_mode;
     VkDebugUtilsMessengerEXT debug_messenger;
 } application_t;
 
 
 
-application_t* application_init(int window_with, int window_height, char* title);
+application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode);
 void application_run(application_t* application);
 //void application_cleanup(application_t* application);
 

@@ -3,6 +3,8 @@
 //
 
 #include "application.h"
+#include "utility/string_list.h"
+#include "extensions.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -47,22 +49,23 @@ void DestroyDebugUtilsMessengerEXT(VkInstance vk_instance, VkDebugUtilsMessenger
 //Setup the callback
 void setup_debug_message_callback(application_t* application)
 {
-#ifdef VULKAN_DEBUG
-    VkDebugUtilsMessengerCreateInfoEXT createInfo;
-    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-    createInfo.pfnUserCallback = debug_callback;
-    createInfo.pUserData = NULL; // Optional
-    createInfo.flags = 0;
+    if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
+    {
+        VkDebugUtilsMessengerCreateInfoEXT createInfo;
+        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        createInfo.pfnUserCallback = debug_callback;
+        createInfo.pUserData = NULL; // Optional
+        createInfo.flags = 0;
 
-    if (CreateDebugUtilsMessengerEXT(application->vk_instance, &createInfo, NULL, &application->debug_messenger) != VK_SUCCESS) {
-        printf("failed to set up debug messenger!\n");
-        exit(1);
-    } else{
-        printf("Sucessfully set up debug messenger!\n");
+        if (CreateDebugUtilsMessengerEXT(application->vk_instance, &createInfo, NULL, &application->debug_messenger) != VK_SUCCESS) {
+            printf("failed to set up debug messenger!\n");
+            exit(1);
+        } else{
+            printf("Sucessfully set up debug messenger!\n");
+        }
     }
-#endif
 }
 
 //===========================================================================================================================================
@@ -85,40 +88,42 @@ void init_glfw(application_t* application)
     }
 }
 
-
-void get_extensions()
+string_list_t get_required_extensions(application_t* application)
 {
-    unsigned int layer_count;
-    vkEnumerateInstanceLayerProperties(&layer_count, NULL);
-    VkLayerProperties* layer_properties = (VkLayerProperties*)malloc(sizeof(VkLayerProperties) * layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, layer_properties);
+    //Create a stringlist to keep track of all the names of extensions we want to enable.
+    string_list_t list = string_list_init(&list, 4);
 
-    printf("Available layers:\n");
-    for(unsigned int i = 0; i < layer_count; i++)
+    //fetch all the extensions that glfw needs and add all of the existing extensions
+    uint32_t glfw_extension_count = 0;
+    const char** glfw_extensions;
+    glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+
+    for(size_t i = 0; i < glfw_extension_count; i++)
     {
-        //printf("%s\n", layer_properties[i].layerName);
+        if(extension_exists(glfw_extensions[i]))
+        {
+            string_list_add(&list, (char*)glfw_extensions[i]);
+        }
+        else
+        {
+            printf("glfw requests extension %s, which is not available on the current system. Proceeding without it...", glfw_extensions[i]);
+        }
     }
 
-    //glfwGetRequiredInstanceExtensions
-
-
-    unsigned int properties_count = 0;
-    vkEnumerateInstanceExtensionProperties(NULL, &properties_count, NULL);
-    VkExtensionProperties* extension_properties = (VkExtensionProperties*)malloc(sizeof(VkExtensionProperties) * properties_count);
-    vkEnumerateInstanceExtensionProperties(NULL, &properties_count, extension_properties);
-
-    printf("Available extensions:\n");
-    for(unsigned int i = 0; i < properties_count; i++)
+    //Add debug utils if vulkan debugging is enabled
+    if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
-        //printf("%s\n", extension_properties[i].extensionName);
+        string_list_add(&list, "VK_EXT_debug_utils");
     }
+    return list;
 }
-
 
 void create_vulkan_instance(application_t* application)
 {
-    get_extensions();
+    //Get the required extensions based on glfw and debugging mode
+    string_list_t required_extensions = get_required_extensions(application);
 
+    //get_extensions(application);
     VkApplicationInfo vk_app_info;
     vk_app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     vk_app_info.pApplicationName = "CVulkan";
@@ -131,46 +136,23 @@ void create_vulkan_instance(application_t* application)
     vk_instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vk_instance_create_info.pApplicationInfo = &vk_app_info;
 
-    uint32_t glfw_extension_count = 0;
-    const char** glfw_extensions;
 
-    glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
 
-#ifdef VULKAN_DEBUG
-    //Need to resize glfw_extensions
-    char* debug_extension = "VK_EXT_debug_utils";
-    //Allocate for 1 extra string
-    const char** extensions = (const char**)malloc(sizeof(char*) * (glfw_extension_count+1));
+    vk_instance_create_info.enabledExtensionCount = required_extensions.current_index;
+    vk_instance_create_info.ppEnabledExtensionNames = (const char **) required_extensions.data;
 
-    //copy the pointers
-    for(size_t i = 0; i < glfw_extension_count; i++)
+
+    if(vulkan_debugging_enabled)
     {
-        extensions[i] = glfw_extensions[i];
+        const char* layer_names[] = { "VK_LAYER_KHRONOS_validation" };
+        vk_instance_create_info.enabledLayerCount = 1;
+        vk_instance_create_info.ppEnabledLayerNames = layer_names;
     }
-
-    //add the debug extension
-    extensions[glfw_extension_count] = debug_extension;
-
-    for(size_t i = 0; i < glfw_extension_count+1; i++)
+    else
     {
-        printf("%s\n", extensions[i]);
+        vk_instance_create_info.ppEnabledLayerNames = NULL;
+        vk_instance_create_info.enabledLayerCount = 0;
     }
-
-    vk_instance_create_info.enabledExtensionCount = glfw_extension_count+1;
-    vk_instance_create_info.ppEnabledExtensionNames = extensions;
-
-    const char* layer_names[] = { "VK_LAYER_KHRONOS_validation" };
-    vk_instance_create_info.enabledLayerCount = 1;
-    vk_instance_create_info.ppEnabledLayerNames = layer_names;
-
-#else
-    vk_instance_create_info.enabledExtensionCount = glfw_extension_count;
-    vk_instance_create_info.ppEnabledExtensionNames = glfw_extensions;
-     vk_instance_create_info.ppEnabledLayerNames = NULL;
-    vk_instance_create_info.enabledLayerCount = 0;
-#endif
-
-
 
     if (vkCreateInstance(&vk_instance_create_info, NULL, &application->vk_instance) != VK_SUCCESS) {
         printf("failed to create instance!\n");
@@ -181,10 +163,7 @@ void create_vulkan_instance(application_t* application)
         printf("Successfully created instance!\n");
     }
 
-
-#ifdef VULKAN_DEBUG
-    free(extensions);
-#endif
+    string_list_free(&required_extensions);
 }
 
 
@@ -201,8 +180,9 @@ void init_vulkan(application_t* application)
 //Cleanup
 void application_cleanup(application_t* application)
 {
-    vkDestroyInstance(application->vk_instance, NULL);
     DestroyDebugUtilsMessengerEXT(application->vk_instance, application->debug_messenger, NULL);
+    vkDestroyInstance(application->vk_instance, NULL);
+
     glfwDestroyWindow(application->glfw_window);
     glfwTerminate();
 
@@ -213,12 +193,13 @@ void application_cleanup(application_t* application)
 //========================================================================================================================================
 //public
 
-application_t* application_init(int window_with, int window_height, char* title)
+application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode)
 {
     application_t* app = (application_t*)malloc(sizeof(application_t));
     app->window_with = window_with;
     app->window_height = window_height;
     app->title = (char*)malloc(sizeof(char) * strlen(title));
+    app->vulkan_debugging_mode = vulkan_debugging_mode;
     strcpy(app->title, title);
 
     init_glfw(app);
