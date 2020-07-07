@@ -28,6 +28,12 @@ typedef struct
 } application_t;
 
 
+typedef struct
+{
+    bool has_graphics_family_index;
+    uint32_t graphics_family_index;
+}queue_family_indices_t;
+
 
 application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode);
 void application_run(application_t* application);

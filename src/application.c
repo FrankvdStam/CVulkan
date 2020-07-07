@@ -13,6 +13,32 @@
 //========================================================================================================================================
 //Private
 
+//========================================================================================================================================
+//queue families
+
+queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device) {
+    queue_family_indices_t indices;
+
+    indices.graphics_family_index = 0;
+
+    uint32_t queue_family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, NULL);
+    VkQueueFamilyProperties* queue_family_properties = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queue_family_count);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_family_properties);
+
+    for(size_t i = 0; i < queue_family_count; i++)
+    {
+        if(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+        {
+            indices.has_graphics_family_index = true;
+            indices.graphics_family_index = i;
+        }
+    }
+
+    free(queue_family_properties);
+    return indices;
+}
+
 //==========================================================================================================================================
 //Debugging callbacks
 
@@ -182,12 +208,12 @@ void pick_physical_device(application_t* application)
 
     application->vk_physical_device = devices[0];
     free(devices);
-    
+
     VkPhysicalDeviceProperties deviceProperties;
     vkGetPhysicalDeviceProperties(application->vk_physical_device, &deviceProperties);
 
     printf("Picked device %s\n", deviceProperties.deviceName);
-
+    get_queue_family_indices(application->vk_physical_device);
 }
 
 
