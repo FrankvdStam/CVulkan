@@ -5,8 +5,7 @@
 #include "application.h"
 
 int main() {
-    run();
-
-
+    application_t* app = application_init(800, 600, "Vulkan");
+    application_run(app);
     return 0;
 }

@@ -9,14 +9,20 @@
 
 #define VULKAN_DEBUG
 
-void run();
-void init_vulkan();
-void main_loop();
-void cleanup();
+typedef struct
+{
+    char* title;
+    int window_with;
+    int window_height;
+    GLFWwindow* glfw_window;
+    VkInstance vk_instance;
+    VkDebugUtilsMessengerEXT debug_messenger;
+} application_t;
 
-void create_instance();
-void setup_debug_message_callback();
+
+
+application_t* application_init(int window_with, int window_height, char* title);
+void application_run(application_t* application);
+//void application_cleanup(application_t* application);
+
 #endif //CVULKAN_APPLICATION_H
-
-VkResult CreateDebugUtilsMessengerEXT(VkInstance vk_instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
-void DestroyDebugUtilsMessengerEXT(VkInstance vk_instance, VkDebugUtilsMessengerEXT vk_debugMessenger, const VkAllocationCallbacks* pAllocator);
