@@ -6,14 +6,8 @@
 
 #include "extensions.h"
 
-//#define GLFW_INCLUDE_VULKAN
-
-#include <vulkan/vulkan.h>
-
-#define GLFW_INCLUDE_NONE
-#define GLFW_EXPOSE_NATIVE_WIN32
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <GLFW/glfw3native.h>
 
 //========================================================================================================================================
 //Private
@@ -23,20 +17,13 @@
 
 void get_vk_surface(application_t* application)
 {
-    VkWin32SurfaceCreateInfoKHR create_info;
-    create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-    create_info.hwnd = glfwGetWin32Window(application->glfw_window);
-    create_info.hinstance = GetModuleHandle(NULL);
-    create_info.flags = 0;
-    create_info.pNext = NULL;
-
-    if (vkCreateWin32SurfaceKHR(application->vk_instance, &create_info, NULL, &application->vk_surface) != VK_SUCCESS) {
-        printf("failed to create window surface!\n");
-        exit(1);
+    if (glfwCreateWindowSurface(application->vk_instance, application->glfw_window, NULL, &application->vk_surface) != VK_SUCCESS)
+    {
+        printf("failed to create window surface\n");
     }
     else
     {
-        printf("Successfully created window surface!\n");
+        printf("Successfully created window surface\n");
     }
 }
 
@@ -137,12 +124,12 @@ void create_logical_device(application_t* application) {
 
     if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &application->vk_device) != VK_SUCCESS)
     {
-        printf("failed to create logical device!\n");
+        printf("failed to create logical device\n");
         exit(1);
     }
     else
     {
-        printf("Successfully created logical device!\n");
+        printf("Successfully created logical device\n");
     }
 
     vkGetDeviceQueue(application->vk_device, indices.graphics_family_index, 0, &application->vk_graphics_queue);
@@ -197,10 +184,10 @@ void setup_debug_message_callback(application_t* application)
         create_info.flags = 0;
 
         if (CreateDebugUtilsMessengerEXT(application->vk_instance, &create_info, NULL, &application->vk_debug_messenger) != VK_SUCCESS) {
-            printf("failed to set up debug messenger!\n");
+            printf("failed to set up debug messenger\n");
             exit(1);
         } else{
-            printf("Sucessfully set up debug messenger!\n");
+            printf("Sucessfully set up debug messenger\n");
         }
     }
 }
@@ -293,12 +280,12 @@ void create_vulkan_instance(application_t* application)
 
     if (vkCreateInstance(&vk_instance_create_info, NULL, &application->vk_instance) != VK_SUCCESS)
     {
-        printf("failed to create instance!\n");
+        printf("failed to create instance\n");
         exit(1);
     }
     else
     {
-        printf("Successfully created instance!\n");
+        printf("Successfully created instance\n");
     }
 
 
