@@ -16,8 +16,8 @@ typedef enum
 
 typedef struct
 {
-    bool has_graphics_family_index;
     uint32_t graphics_family_index;
+    uint32_t present_family_index;
 }queue_family_indices_t;
 
 typedef struct
@@ -34,9 +34,12 @@ typedef struct
     VkPhysicalDevice vk_physical_device;
     VkDevice vk_device;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
-    VkQueue vk_graphics_queue;
+
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;
+
+    VkQueue vk_present_queue;
+    VkQueue vk_graphics_queue;
 
     string_list_t* required_extension_names;
     string_list_t* required_layer_names;

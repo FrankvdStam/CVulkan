@@ -30,6 +30,9 @@ VkSurfaceKHR get_vk_surface(const application_t* application)
 //queue families
 
 queue_family_indices_t get_queue_family_indices(const application_t* application) {
+    bool has_graphics_family_index = false;
+    bool has_present_family_index = false;
+
     queue_family_indices_t indices;
 
     indices.graphics_family_index = 0;
@@ -43,9 +46,29 @@ queue_family_indices_t get_queue_family_indices(const application_t* application
     {
         if(queue_family_properties[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
         {
-            indices.has_graphics_family_index = true;
+            has_graphics_family_index = true;
             indices.graphics_family_index = i;
         }
+
+        VkBool32 presentSupport = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(application->vk_physical_device, i, application->vk_surface, &presentSupport);
+        if(presentSupport)
+        {
+            indices.present_family_index = i;
+            has_present_family_index = true;
+        }
+    }
+
+    if(!has_graphics_family_index)
+    {
+        printf("No graphics queue family index found.");
+        exit(1);
+    }
+
+    if(!has_present_family_index)
+    {
+        printf("No present queue family index found.");
+        exit(1);
     }
 
     free(queue_family_properties);
@@ -54,19 +77,33 @@ queue_family_indices_t get_queue_family_indices(const application_t* application
 
 //==========================================================================================================================================
 //Logical device
+
+#define TOTAL_QUEUE_INDICES 2
+
 VkDevice create_logical_device(const application_t* application)
 {
     VkDevice vk_device;
 
-    VkDeviceQueueCreateInfo queue_create_info;
-    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueFamilyIndex =  application->queue_family_indices.graphics_family_index;
-    queue_create_info.queueCount = 1;
-    queue_create_info.pNext = NULL;
-    queue_create_info.flags = 0;
+    //setup a queue for each index we have
+    uint32_t indices[TOTAL_QUEUE_INDICES];
+    VkDeviceQueueCreateInfo queue_create_infos[TOTAL_QUEUE_INDICES];
 
-    float queuePriority = 1.0f;
-    queue_create_info.pQueuePriorities = &queuePriority;
+    indices[0] = application->queue_family_indices.graphics_family_index;
+    indices[1] = application->queue_family_indices.present_family_index;
+
+
+    for(uint32_t i = 0; i < TOTAL_QUEUE_INDICES; i++)
+    {
+        VkDeviceQueueCreateInfo queue_create_info;
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = indices[i];
+        queue_create_info.queueCount = 1;
+        queue_create_info.pNext = NULL;
+        queue_create_info.flags = 0;
+        float queuePriority = 1.0f;
+        queue_create_info.pQueuePriorities = &queuePriority;
+        queue_create_infos[i] = queue_create_info;
+    }
 
     VkPhysicalDeviceFeatures device_features;
     device_features.robustBufferAccess = VK_FALSE;
@@ -115,11 +152,14 @@ VkDevice create_logical_device(const application_t* application)
     device_features.sparseResidency2Samples = VK_FALSE;
     device_features.sparseResidency8Samples = VK_FALSE;
     device_features.sparseResidencyAliased = VK_FALSE;
+    device_features.shaderStorageBufferArrayDynamicIndexing = VK_FALSE;
+    device_features.depthClamp = VK_FALSE;
+    device_features.sparseResidency16Samples = VK_FALSE;
 
     VkDeviceCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    create_info.pQueueCreateInfos = &queue_create_info;
-    create_info.queueCreateInfoCount = 1;
+    create_info.queueCreateInfoCount = TOTAL_QUEUE_INDICES;
+    create_info.pQueueCreateInfos = queue_create_infos;
     create_info.pEnabledFeatures = &device_features;
     create_info.enabledExtensionCount = 0;
     create_info.pNext = NULL;
@@ -220,7 +260,7 @@ VkDebugUtilsMessengerEXT setup_debug_message_callback(const application_t* appli
 //===========================================================================================================================================
 //Initialization
 
-GLFWwindow* init_glfw_get_window(const application_t* application)
+GLFWwindow* glfw_init_get_window(const application_t* application)
 {
     GLFWwindow* glfw_window;
     if(glfwInit() == GLFW_FALSE)
