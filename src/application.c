@@ -3,7 +3,7 @@
 //
 
 #include "application.h"
-#include "utility/string_list.h"
+
 #include "extensions.h"
 
 #define GLFW_INCLUDE_VULKAN
@@ -40,17 +40,58 @@ queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device) {
 }
 
 //==========================================================================================================================================
+//Logical device
+void create_logical_device(application_t* application)
+{
+    queue_family_indices_t indices = get_queue_family_indices(application->vk_physical_device);
+
+    VkDeviceQueueCreateInfo queue_create_info;
+    queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queue_create_info.queueFamilyIndex = indices.graphics_family_index;
+    queue_create_info.queueCount = 1;
+    float queue_priority = 1.0f;
+    queue_create_info.pQueuePriorities = &queue_priority;
+
+    VkPhysicalDeviceFeatures device_features;
+
+    VkDeviceCreateInfo create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    create_info.pQueueCreateInfos = &queue_create_info;
+    create_info.queueCreateInfoCount = 1;
+    create_info.pEnabledFeatures = &device_features;
+    create_info.enabledExtensionCount = 0;
+
+    //if (application->vulkan_debugging_mode == vulkan_debugging_enabled)
+    //{
+    //    const char* layer_names[] = { "VK_LAYER_KHRONOS_validation" };
+    //    createInfo.enabledLayerCount = 1;
+    //    createInfo.ppEnabledLayerNames = layer_names;
+    //}
+    //else
+    //{
+    //    createInfo.enabledLayerCount = 0;
+    //}
+
+    if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &application->vk_device) != VK_SUCCESS)
+    {
+        printf("failed to create logical device!\n");
+        exit(1);
+    }
+}
+
+
+//==========================================================================================================================================
 //Debugging callbacks
 
 //The actual callback
 static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData
+        VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+        VkDebugUtilsMessageTypeFlagsEXT message_type,
+        const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
+        void* p_user_data
 )
 {
-    printf("validation layer: %s\n", pCallbackData->pMessage);
+    printf("validation layer: %s\n", p_callback_data->pMessage);
     return VK_FALSE;
 }
 
@@ -77,15 +118,15 @@ void setup_debug_message_callback(application_t* application)
 {
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
-        VkDebugUtilsMessengerCreateInfoEXT createInfo;
-        createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        createInfo.pfnUserCallback = debug_callback;
-        createInfo.pUserData = NULL; // Optional
-        createInfo.flags = 0;
+        VkDebugUtilsMessengerCreateInfoEXT create_info;
+        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        create_info.pfnUserCallback = debug_callback;
+        create_info.pUserData = NULL; // Optional
+        create_info.flags = 0;
 
-        if (CreateDebugUtilsMessengerEXT(application->vk_instance, &createInfo, NULL, &application->debug_messenger) != VK_SUCCESS) {
+        if (CreateDebugUtilsMessengerEXT(application->vk_instance, &create_info, NULL, &application->vk_debug_messenger) != VK_SUCCESS) {
             printf("failed to set up debug messenger!\n");
             exit(1);
         } else{
@@ -114,10 +155,11 @@ void init_glfw(application_t* application)
     }
 }
 
-string_list_t get_required_extensions(application_t* application)
+string_list_t* get_required_extensions(application_t* application)
 {
     //Create a stringlist to keep track of all the names of extensions we want to enable.
-    string_list_t list = string_list_init(&list, 4);
+    string_list_t* list = (string_list_t*)malloc(sizeof(string_list_t));
+    string_list_init(list, 4);
 
     //fetch all the extensions that glfw needs and add all of the existing extensions
     uint32_t glfw_extension_count = 0;
@@ -128,7 +170,7 @@ string_list_t get_required_extensions(application_t* application)
     {
         if(extension_exists(glfw_extensions[i]))
         {
-            string_list_add(&list, (char*)glfw_extensions[i]);
+            string_list_add(list, (char*)glfw_extensions[i]);
         }
         else
         {
@@ -139,17 +181,24 @@ string_list_t get_required_extensions(application_t* application)
     //Add debug utils if vulkan debugging is enabled
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
-        string_list_add(&list, "VK_EXT_debug_utils");
+        string_list_add(list, "VK_EXT_debug_utils");
+    }
+    return list;
+}
+
+string_list_t* get_required_layers(application_t* application)
+{
+    string_list_t* list = (string_list_t*)malloc(sizeof(string_list_t));
+    string_list_init(list, 1);
+    if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
+    {
+        string_list_add(list, "VK_LAYER_KHRONOS_validation");
     }
     return list;
 }
 
 void create_vulkan_instance(application_t* application)
 {
-    //Get the required extensions based on glfw and debugging mode
-    string_list_t required_extensions = get_required_extensions(application);
-
-    //get_extensions(application);
     VkApplicationInfo vk_app_info;
     vk_app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     vk_app_info.pApplicationName = "CVulkan";
@@ -162,25 +211,18 @@ void create_vulkan_instance(application_t* application)
     vk_instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vk_instance_create_info.pApplicationInfo = &vk_app_info;
 
+    application->required_extension_names = get_required_extensions(application);
+    application->required_layer_names = get_required_layers(application);
+
+    vk_instance_create_info.enabledExtensionCount = application->required_extension_names->current_index;
+    vk_instance_create_info.ppEnabledExtensionNames = (const char**) application->required_extension_names->data;
 
 
-    vk_instance_create_info.enabledExtensionCount = required_extensions.current_index;
-    vk_instance_create_info.ppEnabledExtensionNames = (const char **) required_extensions.data;
+    vk_instance_create_info.enabledLayerCount = application->required_layer_names->current_index;
+    vk_instance_create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
 
-
-    if(vulkan_debugging_enabled)
+    if (vkCreateInstance(&vk_instance_create_info, NULL, &application->vk_instance) != VK_SUCCESS)
     {
-        const char* layer_names[] = { "VK_LAYER_KHRONOS_validation" };
-        vk_instance_create_info.enabledLayerCount = 1;
-        vk_instance_create_info.ppEnabledLayerNames = layer_names;
-    }
-    else
-    {
-        vk_instance_create_info.ppEnabledLayerNames = NULL;
-        vk_instance_create_info.enabledLayerCount = 0;
-    }
-
-    if (vkCreateInstance(&vk_instance_create_info, NULL, &application->vk_instance) != VK_SUCCESS) {
         printf("failed to create instance!\n");
         exit(1);
     }
@@ -189,7 +231,7 @@ void create_vulkan_instance(application_t* application)
         printf("Successfully created instance!\n");
     }
 
-    string_list_free(&required_extensions);
+
 }
 
 void pick_physical_device(application_t* application)
@@ -213,7 +255,6 @@ void pick_physical_device(application_t* application)
     vkGetPhysicalDeviceProperties(application->vk_physical_device, &deviceProperties);
 
     printf("Picked device %s\n", deviceProperties.deviceName);
-    get_queue_family_indices(application->vk_physical_device);
 }
 
 
@@ -222,6 +263,7 @@ void init_vulkan(application_t* application)
     create_vulkan_instance(application);
     setup_debug_message_callback(application);
     pick_physical_device(application);
+    //create_logical_device(application);
 }
 
 
@@ -231,14 +273,16 @@ void application_cleanup(application_t* application)
 {
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
-        DestroyDebugUtilsMessengerEXT(application->vk_instance, application->debug_messenger, NULL);
+        DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
     }
-
+    //vkDestroyDevice(application->vk_device, NULL);
     vkDestroyInstance(application->vk_instance, NULL);
 
     glfwDestroyWindow(application->glfw_window);
     glfwTerminate();
 
+    string_list_free(application->required_extension_names);
+    string_list_free(application->required_layer_names);
     free(application->title);
     free(application);
 }

@@ -6,6 +6,7 @@
 #define CVULKAN_APPLICATION_H
 
 #include "common.h"
+#include "utility/string_list.h"
 
 typedef enum
 {
@@ -20,11 +21,18 @@ typedef struct
     int window_height;
 
     GLFWwindow* glfw_window;
+
     VkInstance vk_instance;
     VkPhysicalDevice vk_physical_device;
+    VkDevice vk_device;
+    VkDebugUtilsMessengerEXT vk_debug_messenger;
 
     vulkan_debugging_mode_t vulkan_debugging_mode;
-    VkDebugUtilsMessengerEXT debug_messenger;
+
+
+    string_list_t* required_extension_names;
+    string_list_t* required_layer_names;
+
 } application_t;
 
 
