@@ -193,6 +193,19 @@ VkQueue get_graphics_queue(const application_t* application)
 }
 
 
+VkQueue get_present_queue(const application_t* application)
+{
+    VkQueue vk_present_queue;
+    vkGetDeviceQueue(application->vk_device, application->queue_family_indices.present_family_index, 0, &vk_present_queue);
+    if(vk_present_queue == NULL)
+    {
+        printf("failed to create present queue\n");
+        exit(1);
+    }
+    printf("Setup present queue\n");
+    return vk_present_queue;
+}
+
 
 //==========================================================================================================================================
 //Debugging callbacks
@@ -387,4 +400,77 @@ VkPhysicalDevice pick_physical_device(const application_t* application)
 
     printf("Picked device %s\n", deviceProperties.deviceName);
     return vk_physical_device;
+}
+
+
+//===========================================================================================================================================
+//swapchain
+swapchain_details_t get_swapchain_details(const application_t* application)
+{
+    swapchain_details_t swapchain_details;
+
+    //get the capabilities
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(application->vk_physical_device, application->vk_surface, &swapchain_details.vk_surface_capabilities);
+
+    //get the formats
+    vkGetPhysicalDeviceSurfaceFormatsKHR(application->vk_physical_device, application->vk_surface, &swapchain_details.surface_formats_size, NULL);
+    swapchain_details.vk_surface_formats = (VkSurfaceFormatKHR*)malloc(sizeof(VkSurfaceFormatKHR) * swapchain_details.surface_formats_size);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(application->vk_physical_device, application->vk_surface, &swapchain_details.surface_formats_size, swapchain_details.vk_surface_formats);
+
+    vkGetPhysicalDeviceSurfacePresentModesKHR(application->vk_physical_device, application->vk_surface, &swapchain_details.present_modes_size, NULL);
+    swapchain_details.vk_surface_present_modes = (VkPresentModeKHR*)malloc(sizeof(VkPresentModeKHR) * swapchain_details.present_modes_size);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(application->vk_physical_device, application->vk_surface, &swapchain_details.present_modes_size, swapchain_details.vk_surface_present_modes);
+
+    return swapchain_details;
+}
+
+VkSurfaceFormatKHR get_surface_format(const application_t* application)
+{
+    for(uint32_t i = 0; i < application->swapchain_details.surface_formats_size; i++)
+    {
+        VkSurfaceFormatKHR format = application->swapchain_details.vk_surface_formats[i];
+        if(format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            return format;
+        }
+    }
+
+    //If we can't have nice things, try to get any at all (try to return the first value)
+    if(application->swapchain_details.surface_formats_size > 0)
+    {
+        return application->swapchain_details.vk_surface_formats[0];
+    }
+
+    printf("Couldn't get surface format.\n");
+    exit(1);
+}
+
+VkPresentModeKHR get_present_mode(const application_t* application)
+{
+    for(uint32_t i = 0; i < application->swapchain_details.present_modes_size; i++)
+    {
+        VkPresentModeKHR present_mode = application->swapchain_details.vk_surface_present_modes[i];
+        if(present_mode == VK_PRESENT_MODE_MAILBOX_KHR)
+        {
+            return present_mode;
+        }
+    }
+    return VK_PRESENT_MODE_FIFO_KHR;
+}
+
+VkExtent2D get_swap_extent(const application_t* application)
+{
+    VkSurfaceCapabilitiesKHR capabilities = application->swapchain_details.vk_surface_capabilities;
+    if(application->swapchain_details.vk_surface_capabilities.currentExtent.width != UINT32_MAX)
+    {
+        return application->swapchain_details.vk_surface_capabilities.currentExtent;
+    }
+
+    //Don't really know if this is any good/how to test it.
+    VkExtent2D extent;
+    extent.width = application->window_with;
+    extent.height = application->window_height;
+    extent.width =  max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, extent.width));
+    extent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, extent.height));
+    return extent;
 }

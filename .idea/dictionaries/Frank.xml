@@ -4,6 +4,7 @@
       <w>cnes</w>
       <w>glfw</w>
       <w>opcode</w>
+      <w>swapchain</w>
     </words>
   </dictionary>
 </component>

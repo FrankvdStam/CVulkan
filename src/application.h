@@ -20,6 +20,14 @@ typedef struct
     uint32_t present_family_index;
 }queue_family_indices_t;
 
+typedef struct {
+    VkSurfaceCapabilitiesKHR vk_surface_capabilities;
+    uint32_t surface_formats_size;
+    VkSurfaceFormatKHR* vk_surface_formats;
+    uint32_t present_modes_size;
+    VkPresentModeKHR* vk_surface_present_modes;
+} swapchain_details_t;
+
 typedef struct
 {
     char* title;
@@ -34,9 +42,13 @@ typedef struct
     VkPhysicalDevice vk_physical_device;
     VkDevice vk_device;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
+    VkSurfaceFormatKHR vk_surface_format;
+    VkPresentModeKHR vk_present_mode;
+    VkExtent2D vk_extent;
 
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;
+    swapchain_details_t swapchain_details;
 
     VkQueue vk_present_queue;
     VkQueue vk_graphics_queue;

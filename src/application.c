@@ -18,6 +18,9 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    free(application->swapchain_details.vk_surface_present_modes);
+    free(application->swapchain_details.vk_surface_formats);
+
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
         free_debug_utils_messenger_extension(application);
@@ -57,14 +60,18 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->required_layer_names = get_required_layers(application);
 
     //Can now initialize vulkan
-    application->vk_instance = create_vulkan_instance(application);
-    application->vk_debug_messenger = setup_debug_message_callback(application);
-    application->vk_surface = get_vk_surface(application);
-    application->vk_physical_device = pick_physical_device(application);
-    application->queue_family_indices = get_queue_family_indices(application);
-    application->vk_device = create_logical_device(application);
-    application->vk_graphics_queue = get_graphics_queue(application);
-
+    application->vk_instance            = create_vulkan_instance(application);
+    application->vk_debug_messenger     = setup_debug_message_callback(application);
+    application->vk_surface             = get_vk_surface(application);
+    application->vk_physical_device     = pick_physical_device(application);
+    application->queue_family_indices   = get_queue_family_indices(application);
+    application->vk_device              = create_logical_device(application);
+    application->vk_graphics_queue      = get_graphics_queue(application);
+    application->vk_present_queue       = get_present_queue(application);
+    application->swapchain_details      = get_swapchain_details(application);
+    application->vk_surface_format      = get_surface_format(application);
+    application->vk_present_mode        = get_present_mode(application);
+    application->vk_extent              = get_swap_extent(application);
     return application;
 }
 
