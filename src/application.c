@@ -7,8 +7,13 @@
 #include "extensions.h"
 
 //#define GLFW_INCLUDE_VULKAN
+
 #include <vulkan/vulkan.h>
+
+#define GLFW_INCLUDE_NONE
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 //========================================================================================================================================
 //Private
@@ -16,17 +21,24 @@
 //========================================================================================================================================
 //surface
 
-//void get_vk_surface(application_t* application)
-//{
-//    VkWin32SurfaceCreateInfoKHR createInfo;
-//    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-//    createInfo.hwnd = glfwGetWin32Window(application->glfw_window);
-//    createInfo.hinstance = GetModuleHandle(NULL);
-//
-//    if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
-//        throw std::runtime_error("failed to create window surface!");
-//    }
-//}
+void get_vk_surface(application_t* application)
+{
+    VkWin32SurfaceCreateInfoKHR create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+    create_info.hwnd = glfwGetWin32Window(application->glfw_window);
+    create_info.hinstance = GetModuleHandle(NULL);
+    create_info.flags = 0;
+    create_info.pNext = NULL;
+
+    if (vkCreateWin32SurfaceKHR(application->vk_instance, &create_info, NULL, &application->vk_surface) != VK_SUCCESS) {
+        printf("failed to create window surface!\n");
+        exit(1);
+    }
+    else
+    {
+        printf("Successfully created window surface!\n");
+    }
+}
 
 //========================================================================================================================================
 //queue families
@@ -320,8 +332,8 @@ void init_vulkan(application_t* application)
 {
     create_vulkan_instance(application);
     setup_debug_message_callback(application);
+    get_vk_surface(application);
     pick_physical_device(application);
-    //create_logical_device(application);
     create_logical_device(application);
 }
 
@@ -334,6 +346,7 @@ void application_cleanup(application_t* application)
     {
         DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
     }
+    vkDestroySurfaceKHR(application->vk_instance, application->vk_surface, NULL);
     vkDestroyDevice(application->vk_device, NULL);
     vkDestroyInstance(application->vk_instance, NULL);
 
