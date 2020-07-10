@@ -5,7 +5,7 @@
 #ifndef CVULKAN_EXTENSIONS_H
 #define CVULKAN_EXTENSIONS_H
 
-#include "common.h"
+#include "../common.h"
 
 bool extension_exists(const char* extension_name);
 bool layer_exists(const char* extension_name);
