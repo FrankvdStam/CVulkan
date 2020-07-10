@@ -311,12 +311,22 @@ VkInstance create_vulkan_instance(const application_t* application)
     return vk_instance;
 }
 
-void pick_physical_device(application_t* application)
+VkPhysicalDevice pick_physical_device(const application_t* application)
 {
+    VkPhysicalDevice vk_physical_device;
+
     //Get the devices
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(application->vk_instance, &device_count, NULL);
-    VkPhysicalDevice* devices = (VkPhysicalDevice*)malloc(sizeof(VkPhysicalDevice) * device_count);
+
+    //Someone could have more than 10 devices. This is a potential memory issue.
+    VkPhysicalDevice devices[10];
+    if(device_count > 10)
+    {
+        printf("There are more physical devices than are allocated for.");
+        exit(1);
+    }
+
     vkEnumeratePhysicalDevices(application->vk_instance, &device_count, devices);
 
     if(device_count == 0 || devices[0] == VK_NULL_HANDLE)
@@ -325,11 +335,11 @@ void pick_physical_device(application_t* application)
         exit(1);
     }
 
-    application->vk_physical_device = devices[0];
-    free(devices);
+    vk_physical_device = devices[0];
 
     VkPhysicalDeviceProperties deviceProperties;
-    vkGetPhysicalDeviceProperties(application->vk_physical_device, &deviceProperties);
+    vkGetPhysicalDeviceProperties(vk_physical_device, &deviceProperties);
 
     printf("Picked device %s\n", deviceProperties.deviceName);
+    return vk_physical_device;
 }

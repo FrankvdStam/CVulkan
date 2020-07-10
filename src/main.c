@@ -5,6 +5,20 @@
 #include "application.h"
 #include "utility/string_list.h"
 
+//int heaptostack()
+//{
+//    int* ptr = (int*)malloc(sizeof(int));
+//    *ptr = 4;
+//    int stack;
+//    memcpy(&stack, ptr, sizeof(int));
+//    free(ptr);
+//    printf("before ret: %i\n", stack);
+//
+//    return stack;
+//}
+
+
+
 int main(int argc, char *argv[]) {
 /*
     string_list_t list;
@@ -23,6 +37,9 @@ int main(int argc, char *argv[]) {
 
     printf("List size: %u\n", list.size);
 */
+
+    //int val = heaptostack();
+    //printf("after ret: %i\n", val);
 
     application_t* app = application_init(800, 600, "Vulkan", vulkan_debugging_enabled);
     //application_t* app = application_init(800, 600, "Vulkan", vulkan_debugging_disabled);

@@ -58,7 +58,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_instance = create_vulkan_instance(application);
     application->vk_debug_messenger = setup_debug_message_callback(application);
     application->vk_surface = get_vk_surface(application);
-    pick_physical_device(application);
+    application->vk_physical_device = pick_physical_device(application);
     application->queue_family_indices = get_queue_family_indices(application);
     application->vk_device = create_logical_device(application);
     application->vk_graphics_queue = get_graphics_queue(application);
