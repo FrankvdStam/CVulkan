@@ -14,7 +14,7 @@
 VkSurfaceKHR get_vk_surface(application_t* application);
 queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device);
 void create_logical_device(application_t* application);
-void setup_debug_message_callback(application_t* application);
+VkDebugUtilsMessengerEXT setup_debug_message_callback(application_t* application);
 void init_glfw(application_t* application);
 string_list_t* get_required_extensions(application_t* application);
 string_list_t* get_required_layers(application_t* application);

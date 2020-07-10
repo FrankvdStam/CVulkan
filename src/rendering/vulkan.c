@@ -170,8 +170,9 @@ void DestroyDebugUtilsMessengerEXT(VkInstance vk_instance, VkDebugUtilsMessenger
 }
 
 //Setup the callback
-void setup_debug_message_callback(application_t* application)
+VkDebugUtilsMessengerEXT setup_debug_message_callback(application_t* application)
 {
+    VkDebugUtilsMessengerEXT vk_debug_messenger;
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
         VkDebugUtilsMessengerCreateInfoEXT create_info;
@@ -182,13 +183,15 @@ void setup_debug_message_callback(application_t* application)
         create_info.pUserData = NULL; // Optional
         create_info.flags = 0;
 
-        if (CreateDebugUtilsMessengerEXT(application->vk_instance, &create_info, NULL, &application->vk_debug_messenger) != VK_SUCCESS) {
+        if (CreateDebugUtilsMessengerEXT(application->vk_instance, &create_info, NULL, &vk_debug_messenger) != VK_SUCCESS) {
             printf("failed to set up debug messenger\n");
             exit(1);
-        } else{
+        } else {
             printf("Sucessfully set up debug messenger\n");
+            return vk_debug_messenger;
         }
     }
+    return NULL;
 }
 
 //===========================================================================================================================================
