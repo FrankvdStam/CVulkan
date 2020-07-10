@@ -6,12 +6,27 @@
 
 #include "extensions.h"
 
-#define GLFW_INCLUDE_VULKAN
+//#define GLFW_INCLUDE_VULKAN
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>
-
 
 //========================================================================================================================================
 //Private
+
+//========================================================================================================================================
+//surface
+
+//void get_vk_surface(application_t* application)
+//{
+//    VkWin32SurfaceCreateInfoKHR createInfo;
+//    createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
+//    createInfo.hwnd = glfwGetWin32Window(application->glfw_window);
+//    createInfo.hinstance = GetModuleHandle(NULL);
+//
+//    if (vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface) != VK_SUCCESS) {
+//        throw std::runtime_error("failed to create window surface!");
+//    }
+//}
 
 //========================================================================================================================================
 //queue families

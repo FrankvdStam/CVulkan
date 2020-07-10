@@ -27,6 +27,7 @@ typedef struct
     VkDevice vk_device;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     VkQueue vk_graphics_queue;
+    VkSurfaceKHR vk_surface;
 
 
     vulkan_debugging_mode_t vulkan_debugging_mode;
