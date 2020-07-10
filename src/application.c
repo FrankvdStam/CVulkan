@@ -55,7 +55,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->required_layer_names = get_required_layers(application);
 
     //Can now initialize vulkan
-    create_vulkan_instance(application);
+    application->vk_instance = create_vulkan_instance(application);
     application->vk_debug_messenger = setup_debug_message_callback(application);
     application->vk_surface = get_vk_surface(application);
     pick_physical_device(application);

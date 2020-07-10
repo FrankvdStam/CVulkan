@@ -14,7 +14,7 @@
 //========================================================================================================================================
 //surface
 
-VkSurfaceKHR get_vk_surface(application_t* application)
+VkSurfaceKHR get_vk_surface(const application_t* application)
 {
     VkSurfaceKHR vk_surface;
     if (glfwCreateWindowSurface(application->vk_instance, application->glfw_window, NULL, &vk_surface) != VK_SUCCESS)
@@ -197,7 +197,7 @@ VkDebugUtilsMessengerEXT setup_debug_message_callback(application_t* application
 //===========================================================================================================================================
 //Initialization
 
-GLFWwindow* init_glfw_get_window(application_t* application)
+GLFWwindow* init_glfw_get_window(const application_t* application)
 {
     GLFWwindow* glfw_window;
     if(glfwInit() == GLFW_FALSE)
@@ -219,7 +219,7 @@ GLFWwindow* init_glfw_get_window(application_t* application)
     return glfw_window;
 }
 
-string_list_t* get_required_extensions(application_t* application)
+string_list_t* get_required_extensions(const application_t* application)
 {
     //Create a stringlist to keep track of all the names of extensions we want to enable.
     string_list_t* list = (string_list_t*)malloc(sizeof(string_list_t));
@@ -250,7 +250,7 @@ string_list_t* get_required_extensions(application_t* application)
     return list;
 }
 
-string_list_t* get_required_layers(application_t* application)
+string_list_t* get_required_layers(const application_t* application)
 {
     string_list_t* list = (string_list_t*)malloc(sizeof(string_list_t));
     string_list_init(list, 1);
@@ -261,8 +261,10 @@ string_list_t* get_required_layers(application_t* application)
     return list;
 }
 
-void create_vulkan_instance(application_t* application)
+VkInstance create_vulkan_instance(const application_t* application)
 {
+    VkInstance vk_instance;
+
     VkApplicationInfo vk_app_info;
     vk_app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     vk_app_info.pApplicationName = "CVulkan";
@@ -277,24 +279,18 @@ void create_vulkan_instance(application_t* application)
     vk_instance_create_info.pApplicationInfo = &vk_app_info;
     vk_instance_create_info.pNext = NULL;
     vk_instance_create_info.flags = 0;
-
     vk_instance_create_info.enabledExtensionCount = application->required_extension_names->current_index;
     vk_instance_create_info.ppEnabledExtensionNames = (const char**) application->required_extension_names->data;
-
     vk_instance_create_info.enabledLayerCount = application->required_layer_names->current_index;
     vk_instance_create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
 
-    if (vkCreateInstance(&vk_instance_create_info, NULL, &application->vk_instance) != VK_SUCCESS)
+    if (vkCreateInstance(&vk_instance_create_info, NULL, &vk_instance) != VK_SUCCESS)
     {
         printf("failed to create instance\n");
         exit(1);
     }
-    else
-    {
-        printf("Successfully created instance\n");
-    }
-
-
+    printf("Successfully created instance\n");
+    return vk_instance;
 }
 
 void pick_physical_device(application_t* application)
