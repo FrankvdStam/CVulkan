@@ -78,9 +78,10 @@ queue_family_indices_t get_queue_family_indices(const application_t* application
 //==========================================================================================================================================
 //Logical device
 
+
 #define TOTAL_QUEUE_INDICES 2
 
-VkDevice create_logical_device(const application_t* application)
+VkDevice get_logical_device(const application_t* application)
 {
     VkDevice vk_device;
 
@@ -162,8 +163,11 @@ VkDevice create_logical_device(const application_t* application)
     create_info.pQueueCreateInfos = queue_create_infos;
     create_info.pEnabledFeatures = &device_features;
     create_info.pNext = NULL;
-    create_info.enabledExtensionCount = application->required_extension_names->current_index;
-    create_info.ppEnabledExtensionNames = (const char**)application->required_extension_names->data;
+
+    const char* device_extensions[] = { "VK_KHR_swapchain" };
+    create_info.ppEnabledExtensionNames = device_extensions;
+    create_info.enabledExtensionCount = 1;
+
     create_info.enabledLayerCount = application->required_layer_names->current_index;
     create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
     create_info.flags = 0;
@@ -246,8 +250,11 @@ void free_debug_utils_messenger_extension(const application_t* application)
     DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
 }
 
+
+
+
 //Setup the callback
-VkDebugUtilsMessengerEXT setup_debug_message_callback(const application_t* application)
+VkDebugUtilsMessengerEXT get_debug_callback(const application_t* application)
 {
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
@@ -338,7 +345,7 @@ string_list_t* get_required_layers(const application_t* application)
     return list;
 }
 
-VkInstance create_vulkan_instance(const application_t* application)
+VkInstance get_instance(const application_t* application)
 {
     VkInstance vk_instance;
 
@@ -370,7 +377,7 @@ VkInstance create_vulkan_instance(const application_t* application)
     return vk_instance;
 }
 
-VkPhysicalDevice pick_physical_device(const application_t* application)
+VkPhysicalDevice get_physical_device(const application_t* application)
 {
     VkPhysicalDevice vk_physical_device;
 
@@ -400,6 +407,20 @@ VkPhysicalDevice pick_physical_device(const application_t* application)
     vkGetPhysicalDeviceProperties(vk_physical_device, &deviceProperties);
 
     printf("Picked device %s\n", deviceProperties.deviceName);
+
+
+    //printf("extensions:\n");
+//
+    //uint32_t extensions_count = 0;
+    //vkEnumerateDeviceExtensionProperties(vk_physical_device, NULL, &extensions_count, NULL);
+    //VkExtensionProperties* props = (VkExtensionProperties*)malloc(sizeof(VkExtensionProperties) * extensions_count);
+    //vkEnumerateDeviceExtensionProperties(vk_physical_device, NULL, &extensions_count, props);
+//
+    //for(uint32_t i = 0; i < extensions_count; i++)
+    //{
+    //    printf("%s\n", props[i].extensionName);
+    //}
+
     return vk_physical_device;
 }
 

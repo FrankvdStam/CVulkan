@@ -18,12 +18,12 @@ string_list_t*              get_required_layers(                    const applic
 GLFWwindow*                 glfw_init_get_window(                   const application_t* application);
 VkSurfaceKHR                get_vk_surface(                         const application_t* application);
 
-VkDebugUtilsMessengerEXT    setup_debug_message_callback(           const application_t* application);
+VkDebugUtilsMessengerEXT    get_debug_callback(                     const application_t* application);
 
-VkInstance                  create_vulkan_instance(                 const application_t* application);
-VkPhysicalDevice            pick_physical_device(                   const application_t* application);
+VkInstance                  get_instance(                           const application_t* application);
+VkPhysicalDevice            get_physical_device(                    const application_t* application);
 
-VkDevice                    create_logical_device(                  const application_t* application);
+VkDevice                    get_logical_device(                     const application_t* application);
 VkQueue                     get_graphics_queue(                     const application_t* application);
 VkQueue                     get_present_queue(                      const application_t* application);
 
