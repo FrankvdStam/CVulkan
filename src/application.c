@@ -41,18 +41,60 @@ queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device) {
 
 //==========================================================================================================================================
 //Logical device
-void create_logical_device(application_t* application)
-{
+void create_logical_device(application_t* application) {
     queue_family_indices_t indices = get_queue_family_indices(application->vk_physical_device);
 
     VkDeviceQueueCreateInfo queue_create_info;
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
     queue_create_info.queueFamilyIndex = indices.graphics_family_index;
     queue_create_info.queueCount = 1;
-    float queue_priority = 1.0f;
-    queue_create_info.pQueuePriorities = &queue_priority;
+    queue_create_info.pNext = NULL;
+
+    float queuePriority = 1.0f;
+    queue_create_info.pQueuePriorities = &queuePriority;
 
     VkPhysicalDeviceFeatures device_features;
+    device_features.robustBufferAccess = VK_FALSE;
+    device_features.fullDrawIndexUint32 = VK_FALSE;
+    device_features.imageCubeArray = VK_FALSE;
+    device_features.independentBlend = VK_FALSE;
+    device_features.geometryShader = VK_FALSE;
+    device_features.sampleRateShading = VK_FALSE;
+    device_features.logicOp = VK_FALSE;
+    device_features.drawIndirectFirstInstance = VK_FALSE;
+    device_features.depthBiasClamp = VK_FALSE;
+    device_features.depthBounds = VK_FALSE;
+    device_features.wideLines = VK_FALSE;
+    device_features.largePoints = VK_FALSE;
+    device_features.alphaToOne = VK_FALSE;
+    device_features.multiViewport = VK_FALSE;
+    device_features.samplerAnisotropy = VK_FALSE;
+    device_features.textureCompressionETC2 = VK_FALSE;
+    device_features.textureCompressionASTC_LDR = VK_FALSE;
+    device_features.textureCompressionBC = VK_FALSE;
+    device_features.occlusionQueryPrecise = VK_FALSE;
+    device_features.pipelineStatisticsQuery = VK_FALSE;
+    device_features.vertexPipelineStoresAndAtomics = VK_FALSE;
+    device_features.fragmentStoresAndAtomics = VK_FALSE;
+    device_features.shaderTessellationAndGeometryPointSize = VK_FALSE;
+    device_features.shaderImageGatherExtended = VK_FALSE;
+    device_features.shaderStorageImageExtendedFormats = VK_FALSE;
+    device_features.shaderStorageImageMultisample = VK_FALSE;
+    device_features.shaderStorageImageReadWithoutFormat = VK_FALSE;
+    device_features.shaderStorageImageWriteWithoutFormat = VK_FALSE;
+    device_features.shaderUniformBufferArrayDynamicIndexing = VK_FALSE;
+    device_features.shaderStorageImageArrayDynamicIndexing = VK_FALSE;
+    device_features.shaderClipDistance = VK_FALSE;
+    device_features.shaderCullDistance = VK_FALSE;
+    device_features.shaderFloat64 = VK_FALSE;
+    device_features.shaderInt64 = VK_FALSE;
+    device_features.shaderInt16 = VK_FALSE;
+    device_features.shaderResourceResidency = VK_FALSE;
+    device_features.shaderResourceMinLod = VK_FALSE;
+    device_features.sparseBinding = VK_FALSE;
+    device_features.sparseResidencyBuffer = VK_FALSE;
+    device_features.sparseResidencyImage2D = VK_FALSE;
+    device_features.inheritedQueries = VK_FALSE;
 
     VkDeviceCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -60,24 +102,19 @@ void create_logical_device(application_t* application)
     create_info.queueCreateInfoCount = 1;
     create_info.pEnabledFeatures = &device_features;
     create_info.enabledExtensionCount = 0;
-
-    //if (application->vulkan_debugging_mode == vulkan_debugging_enabled)
-    //{
-    //    const char* layer_names[] = { "VK_LAYER_KHRONOS_validation" };
-    //    createInfo.enabledLayerCount = 1;
-    //    createInfo.ppEnabledLayerNames = layer_names;
-    //}
-    //else
-    //{
-    //    createInfo.enabledLayerCount = 0;
-    //}
+    create_info.pNext = NULL;
+    create_info.enabledLayerCount = application->required_layer_names->current_index;
+    create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
+    create_info.flags = 0;
 
     if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &application->vk_device) != VK_SUCCESS)
     {
-        printf("failed to create logical device!\n");
-        exit(1);
+        printf("failed to create logical device!");
     }
+
+    //vkGetDeviceQueue(application->vk_device, indices.graphics_family_index, 0, &graphicsQueue);
 }
+
 
 
 //==========================================================================================================================================
@@ -264,6 +301,7 @@ void init_vulkan(application_t* application)
     setup_debug_message_callback(application);
     pick_physical_device(application);
     //create_logical_device(application);
+    create_logical_device(application);
 }
 
 
@@ -275,7 +313,7 @@ void application_cleanup(application_t* application)
     {
         DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
     }
-    //vkDestroyDevice(application->vk_device, NULL);
+    vkDestroyDevice(application->vk_device, NULL);
     vkDestroyInstance(application->vk_instance, NULL);
 
     glfwDestroyWindow(application->glfw_window);
