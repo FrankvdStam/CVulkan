@@ -20,7 +20,7 @@ void application_cleanup(application_t* application)
 {
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
     {
-        DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
+        free_debug_utils_messenger_extension(application);
     }
     vkDestroySurfaceKHR(application->vk_instance, application->vk_surface, NULL);
     vkDestroyDevice(application->vk_device, NULL);

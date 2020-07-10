@@ -187,8 +187,13 @@ void DestroyDebugUtilsMessengerEXT(VkInstance vk_instance, VkDebugUtilsMessenger
     }
 }
 
+void free_debug_utils_messenger_extension(const application_t* application)
+{
+    DestroyDebugUtilsMessengerEXT(application->vk_instance, application->vk_debug_messenger, NULL);
+}
+
 //Setup the callback
-VkDebugUtilsMessengerEXT setup_debug_message_callback(application_t* application)
+VkDebugUtilsMessengerEXT setup_debug_message_callback(const application_t* application)
 {
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     if(application->vulkan_debugging_mode == vulkan_debugging_enabled)
