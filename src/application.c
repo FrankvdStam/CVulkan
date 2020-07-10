@@ -18,7 +18,7 @@ void init_vulkan(application_t* application)
 {
     create_vulkan_instance(application);
     setup_debug_message_callback(application);
-    get_vk_surface(application);
+    application->vk_surface = get_vk_surface(application);
     pick_physical_device(application);
     create_logical_device(application);
 }

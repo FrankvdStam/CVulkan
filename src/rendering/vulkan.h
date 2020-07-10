@@ -11,7 +11,7 @@
 #include "../application.h"
 #include "extensions.h"
 
-void get_vk_surface(application_t* application);
+VkSurfaceKHR get_vk_surface(application_t* application);
 queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device);
 void create_logical_device(application_t* application);
 void setup_debug_message_callback(application_t* application);

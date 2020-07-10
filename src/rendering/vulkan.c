@@ -14,16 +14,16 @@
 //========================================================================================================================================
 //surface
 
-void get_vk_surface(application_t* application)
+VkSurfaceKHR get_vk_surface(application_t* application)
 {
-    if (glfwCreateWindowSurface(application->vk_instance, application->glfw_window, NULL, &application->vk_surface) != VK_SUCCESS)
+    VkSurfaceKHR vk_surface;
+    if (glfwCreateWindowSurface(application->vk_instance, application->glfw_window, NULL, &vk_surface) != VK_SUCCESS)
     {
         printf("failed to create window surface\n");
+        exit(1);
     }
-    else
-    {
-        printf("Successfully created window surface\n");
-    }
+    printf("Successfully created window surface\n");
+    return vk_surface;
 }
 
 //========================================================================================================================================
