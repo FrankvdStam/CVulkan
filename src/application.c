@@ -72,6 +72,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_surface_format      = get_surface_format(application);
     application->vk_present_mode        = get_present_mode(application);
     application->vk_extent              = get_swap_extent(application);
+    application->vk_swapchain           = get_swapchain(application);
     return application;
 }
 

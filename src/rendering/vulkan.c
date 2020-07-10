@@ -161,8 +161,9 @@ VkDevice create_logical_device(const application_t* application)
     create_info.queueCreateInfoCount = TOTAL_QUEUE_INDICES;
     create_info.pQueueCreateInfos = queue_create_infos;
     create_info.pEnabledFeatures = &device_features;
-    create_info.enabledExtensionCount = 0;
     create_info.pNext = NULL;
+    create_info.enabledExtensionCount = application->required_extension_names->current_index;
+    create_info.ppEnabledExtensionNames = (const char**)application->required_extension_names->data;
     create_info.enabledLayerCount = application->required_layer_names->current_index;
     create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
     create_info.flags = 0;
@@ -473,4 +474,69 @@ VkExtent2D get_swap_extent(const application_t* application)
     extent.width =  max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, extent.width));
     extent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, extent.height));
     return extent;
+}
+
+VkSwapchainKHR get_swapchain(const application_t* application)
+{
+    VkSwapchainKHR vk_swapchain;
+
+    //request one more than min without exceeding max
+    uint32_t imageCount = application->swapchain_details.vk_surface_capabilities.minImageCount + 1;
+    if (application->swapchain_details.vk_surface_capabilities.maxImageCount > 0 && imageCount > application->swapchain_details.vk_surface_capabilities.maxImageCount)
+    {
+        imageCount = application->swapchain_details.vk_surface_capabilities.maxImageCount;
+    }
+
+    VkSwapchainCreateInfoKHR create_info;
+    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    create_info.surface = application->vk_surface;
+    create_info.minImageCount = imageCount;
+    create_info.imageFormat = application->vk_surface_format.format;
+    create_info.imageColorSpace = application->vk_surface_format.colorSpace;
+    create_info.imageExtent = application->vk_extent;
+    create_info.imageArrayLayers = 1;
+    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    create_info.flags = 0;
+    create_info.pNext = NULL;
+
+    uint32_t indices[2];
+    indices[0] = application->queue_family_indices.graphics_family_index;
+    indices[1] = application->queue_family_indices.present_family_index;
+
+
+    if (application->queue_family_indices.graphics_family_index != application->queue_family_indices.present_family_index)
+    {
+        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        create_info.queueFamilyIndexCount = 2;
+        create_info.pQueueFamilyIndices = indices;
+    }
+    else
+    {
+        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    }
+
+    create_info.preTransform = application->swapchain_details.vk_surface_capabilities.currentTransform;
+    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    create_info.presentMode = application->vk_present_mode;
+    create_info.clipped = VK_TRUE;
+
+    create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(application->vk_device, &create_info, NULL, &vk_swapchain) != VK_SUCCESS)
+    {
+        printf("failed to create swap chain.\n");
+        exit(1);
+    }
+    else
+    {
+        printf("Created swap chain.\n");
+        return vk_swapchain;
+    }
+
+    //vkGetSwapchainImagesKHR(application->vk_device, vk_swapchain, &imageCount, NULL);
+    //swapChainImages.resize(imageCount);
+    //vkGetSwapchainImagesKHR(application->vk_device, vk_swapchain, &imageCount, swapChainImages.data());
+    //
+    //swapChainImageFormat = surfaceFormat.format;
+    //swapChainExtent = extent;
 }

@@ -45,6 +45,7 @@ typedef struct
     VkSurfaceFormatKHR vk_surface_format;
     VkPresentModeKHR vk_present_mode;
     VkExtent2D vk_extent;
+    VkSwapchainKHR vk_swapchain;
 
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;
