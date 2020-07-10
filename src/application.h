@@ -16,34 +16,34 @@ typedef enum
 
 typedef struct
 {
+    bool has_graphics_family_index;
+    uint32_t graphics_family_index;
+}queue_family_indices_t;
+
+typedef struct
+{
     char* title;
     int window_with;
     int window_height;
+    vulkan_debugging_mode_t vulkan_debugging_mode;
 
     GLFWwindow* glfw_window;
 
+    //Vulkan
     VkInstance vk_instance;
     VkPhysicalDevice vk_physical_device;
     VkDevice vk_device;
     VkDebugUtilsMessengerEXT vk_debug_messenger;
     VkQueue vk_graphics_queue;
     VkSurfaceKHR vk_surface;
-
-
-    vulkan_debugging_mode_t vulkan_debugging_mode;
-
+    queue_family_indices_t queue_family_indices;
 
     string_list_t* required_extension_names;
     string_list_t* required_layer_names;
-
 } application_t;
 
 
-typedef struct
-{
-    bool has_graphics_family_index;
-    uint32_t graphics_family_index;
-}queue_family_indices_t;
+
 
 
 application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode);

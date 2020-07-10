@@ -29,15 +29,15 @@ VkSurfaceKHR get_vk_surface(const application_t* application)
 //========================================================================================================================================
 //queue families
 
-queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device) {
+queue_family_indices_t get_queue_family_indices(const application_t* application) {
     queue_family_indices_t indices;
 
     indices.graphics_family_index = 0;
 
     uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, NULL);
+    vkGetPhysicalDeviceQueueFamilyProperties(application->vk_physical_device, &queue_family_count, NULL);
     VkQueueFamilyProperties* queue_family_properties = (VkQueueFamilyProperties*)malloc(sizeof(VkQueueFamilyProperties) * queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_family_properties);
+    vkGetPhysicalDeviceQueueFamilyProperties(application->vk_physical_device, &queue_family_count, queue_family_properties);
 
     for(size_t i = 0; i < queue_family_count; i++)
     {
@@ -54,12 +54,13 @@ queue_family_indices_t get_queue_family_indices(VkPhysicalDevice device) {
 
 //==========================================================================================================================================
 //Logical device
-void create_logical_device(application_t* application) {
-    queue_family_indices_t indices = get_queue_family_indices(application->vk_physical_device);
+VkDevice create_logical_device(const application_t* application)
+{
+    VkDevice vk_device;
 
     VkDeviceQueueCreateInfo queue_create_info;
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    queue_create_info.queueFamilyIndex = indices.graphics_family_index;
+    queue_create_info.queueFamilyIndex =  application->queue_family_indices.graphics_family_index;
     queue_create_info.queueCount = 1;
     queue_create_info.pNext = NULL;
     queue_create_info.flags = 0;
@@ -109,6 +110,11 @@ void create_logical_device(application_t* application) {
     device_features.sparseResidencyBuffer = VK_FALSE;
     device_features.sparseResidencyImage2D = VK_FALSE;
     device_features.inheritedQueries = VK_FALSE;
+    device_features.dualSrcBlend = VK_FALSE;
+    device_features.shaderSampledImageArrayDynamicIndexing = VK_FALSE;
+    device_features.sparseResidency2Samples = VK_FALSE;
+    device_features.sparseResidency8Samples = VK_FALSE;
+    device_features.sparseResidencyAliased = VK_FALSE;
 
     VkDeviceCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -121,7 +127,7 @@ void create_logical_device(application_t* application) {
     create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;
     create_info.flags = 0;
 
-    if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &application->vk_device) != VK_SUCCESS)
+    if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &vk_device) != VK_SUCCESS)
     {
         printf("failed to create logical device\n");
         exit(1);
@@ -129,9 +135,21 @@ void create_logical_device(application_t* application) {
     else
     {
         printf("Successfully created logical device\n");
+        return vk_device;
     }
+}
 
-    vkGetDeviceQueue(application->vk_device, indices.graphics_family_index, 0, &application->vk_graphics_queue);
+VkQueue get_graphics_queue(const application_t* application)
+{
+    VkQueue vk_graphics_queue;
+    vkGetDeviceQueue(application->vk_device, application->queue_family_indices.graphics_family_index, 0, &vk_graphics_queue);
+    if(vk_graphics_queue == NULL)
+    {
+        printf("failed to create graphics queue\n");
+        exit(1);
+    }
+    printf("Setup graphics queue\n");
+    return vk_graphics_queue;
 }
 
 
