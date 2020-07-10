@@ -49,6 +49,7 @@ void create_logical_device(application_t* application) {
     queue_create_info.queueFamilyIndex = indices.graphics_family_index;
     queue_create_info.queueCount = 1;
     queue_create_info.pNext = NULL;
+    queue_create_info.flags = 0;
 
     float queuePriority = 1.0f;
     queue_create_info.pQueuePriorities = &queuePriority;
@@ -109,10 +110,15 @@ void create_logical_device(application_t* application) {
 
     if (vkCreateDevice(application->vk_physical_device, &create_info, NULL, &application->vk_device) != VK_SUCCESS)
     {
-        printf("failed to create logical device!");
+        printf("failed to create logical device!\n");
+        exit(1);
+    }
+    else
+    {
+        printf("Successfully created logical device!\n");
     }
 
-    //vkGetDeviceQueue(application->vk_device, indices.graphics_family_index, 0, &graphicsQueue);
+    vkGetDeviceQueue(application->vk_device, indices.graphics_family_index, 0, &application->vk_graphics_queue);
 }
 
 
