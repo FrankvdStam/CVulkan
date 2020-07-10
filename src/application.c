@@ -18,6 +18,8 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    vkDestroySwapchainKHR(application->vk_device, application->vk_swapchain, NULL);
+
     free(application->swapchain_details.vk_surface_present_modes);
     free(application->swapchain_details.vk_surface_formats);
 
@@ -80,7 +82,7 @@ void application_run(application_t* application)
 {
     while (!glfwWindowShouldClose(application->glfw_window)) {
         glfwPollEvents();
-        glfwWindowShouldClose(application->glfw_window);
+        glfwSetWindowShouldClose(application->glfw_window, 1);
     }
     application_cleanup(application);
 }
