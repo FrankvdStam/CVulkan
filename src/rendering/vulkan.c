@@ -197,21 +197,26 @@ VkDebugUtilsMessengerEXT setup_debug_message_callback(application_t* application
 //===========================================================================================================================================
 //Initialization
 
-void init_glfw(application_t* application)
+GLFWwindow* init_glfw_get_window(application_t* application)
 {
+    GLFWwindow* glfw_window;
     if(glfwInit() == GLFW_FALSE)
     {
         printf("Failed to initialize glfw.\n");
         exit(1);
     }
+
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
-    application->glfw_window = glfwCreateWindow(application->window_with, application->window_height, "Vulkan", NULL, NULL);
-    if(application->glfw_window == NULL)
+    glfw_window = glfwCreateWindow(application->window_with, application->window_height, application->title, NULL, NULL);
+
+    if(glfw_window == NULL)
     {
         printf("Failed to create glfw window.\n");
         exit(1);
     }
+
+    return glfw_window;
 }
 
 string_list_t* get_required_extensions(application_t* application)

@@ -57,7 +57,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     app->vulkan_debugging_mode = vulkan_debugging_mode;
     strcpy(app->title, title);
 
-    init_glfw(app);
+    app->glfw_window = init_glfw_get_window(app);
     init_vulkan(app);
     return app;
 }
