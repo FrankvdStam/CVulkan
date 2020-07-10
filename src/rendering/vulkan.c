@@ -270,17 +270,16 @@ void create_vulkan_instance(application_t* application)
     vk_app_info.pEngineName = "No Engine";
     vk_app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     vk_app_info.apiVersion = VK_API_VERSION_1_0;
+    vk_app_info.pNext = NULL;
 
     VkInstanceCreateInfo vk_instance_create_info;
     vk_instance_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     vk_instance_create_info.pApplicationInfo = &vk_app_info;
-
-    application->required_extension_names = get_required_extensions(application);
-    application->required_layer_names = get_required_layers(application);
+    vk_instance_create_info.pNext = NULL;
+    vk_instance_create_info.flags = 0;
 
     vk_instance_create_info.enabledExtensionCount = application->required_extension_names->current_index;
     vk_instance_create_info.ppEnabledExtensionNames = (const char**) application->required_extension_names->data;
-
 
     vk_instance_create_info.enabledLayerCount = application->required_layer_names->current_index;
     vk_instance_create_info.ppEnabledLayerNames = (const char**)application->required_layer_names->data;

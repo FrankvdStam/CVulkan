@@ -14,16 +14,6 @@
 //========================================================================================================================================
 //Private
 
-void init_vulkan(application_t* application)
-{
-    create_vulkan_instance(application);
-    application->vk_debug_messenger = setup_debug_message_callback(application);
-    application->vk_surface = get_vk_surface(application);
-    pick_physical_device(application);
-    create_logical_device(application);
-}
-
-
 //========================================================================================================================================
 //Cleanup
 void application_cleanup(application_t* application)
@@ -50,16 +40,28 @@ void application_cleanup(application_t* application)
 
 application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode)
 {
-    application_t* app = (application_t*)malloc(sizeof(application_t));
-    app->window_with = window_with;
-    app->window_height = window_height;
-    app->title = (char*)malloc(sizeof(char) * strlen(title));
-    app->vulkan_debugging_mode = vulkan_debugging_mode;
-    strcpy(app->title, title);
+    application_t* application = (application_t*)malloc(sizeof(application_t));
+    application->window_with = window_with;
+    application->window_height = window_height;
+    application->title = (char*)malloc(sizeof(char) * strlen(title));
+    application->vulkan_debugging_mode = vulkan_debugging_mode;
+    strcpy(application->title, title);
 
-    app->glfw_window = init_glfw_get_window(app);
-    init_vulkan(app);
-    return app;
+    //Initialize glfw and get a window
+    application->glfw_window = init_glfw_get_window(application);
+
+    //now that glfw is initialized, we can ask it about what extensions it needs
+    application->required_extension_names = get_required_extensions(application);
+    application->required_layer_names = get_required_layers(application);
+
+    //Can now initialize vulkan
+    create_vulkan_instance(application);
+    application->vk_debug_messenger = setup_debug_message_callback(application);
+    application->vk_surface = get_vk_surface(application);
+    pick_physical_device(application);
+    create_logical_device(application);
+
+    return application;
 }
 
 
@@ -67,6 +69,7 @@ void application_run(application_t* application)
 {
     while (!glfwWindowShouldClose(application->glfw_window)) {
         glfwPollEvents();
+        glfwWindowShouldClose(application->glfw_window);
     }
     application_cleanup(application);
 }
