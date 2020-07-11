@@ -46,6 +46,7 @@ typedef struct
     VkPresentModeKHR vk_present_mode;
     VkExtent2D vk_extent;
     VkSwapchainKHR vk_swapchain;
+    VkPipelineLayout vk_pipeline_layout;
 
     uint32_t vk_image_size;
     VkImage* vk_images;

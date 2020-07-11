@@ -5,7 +5,7 @@
 #include "utilities.h"
 #include "common.h"
 
-void read_file(char* file_path, char** buffer, unsigned long* file_size)
+void read_file(const char* file_path, char** buffer, unsigned long* file_size)
 {
     FILE* file;
     //char* buffer;
@@ -37,3 +37,4 @@ void read_file(char* file_path, char** buffer, unsigned long* file_size)
     fread(*buffer, *file_size, 1, file);
     fclose(file);
 }
+

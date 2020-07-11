@@ -11,6 +11,8 @@
 #include "../application.h"
 #include "extensions.h"
 
+#include "../utilities.h"
+
 queue_family_indices_t      get_queue_family_indices(               const application_t* application);
 string_list_t*              get_required_extensions(                const application_t* application);
 string_list_t*              get_required_layers(                    const application_t* application);
@@ -36,6 +38,9 @@ VkImage*                    get_swapchain_images(                   const applic
 VkImageView*                get_image_views(                        const application_t* application);
 
 void                        free_debug_utils_messenger_extension(   const application_t* application);
+
+//VkShaderModule              get_shader_module(                      const application_t* application, const char* path);
+VkPipelineLayout            get_pipeline_layout(                    const application_t* application);
 
 
 #endif //CVULKAN_VULKAN_H

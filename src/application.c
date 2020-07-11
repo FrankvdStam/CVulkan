@@ -19,7 +19,7 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
-
+    vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
     for(uint32_t i = 0; i < application->vk_image_size; i++)
     {
         vkDestroyImageView(application->vk_device, application->vk_image_views[i], NULL);
@@ -86,6 +86,9 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_images              = get_swapchain_images(application, &images_size);
     application->vk_image_size = images_size;
     application->vk_image_views         = get_image_views(application);
+    application->vk_pipeline_layout     = get_pipeline_layout(application);
+
+
     return application;
 }
 
