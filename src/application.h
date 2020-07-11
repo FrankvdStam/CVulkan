@@ -47,6 +47,7 @@ typedef struct
     VkExtent2D vk_extent;
     VkSwapchainKHR vk_swapchain;
     VkPipelineLayout vk_pipeline_layout;
+    VkRenderPass vk_render_pass;
 
     uint32_t vk_image_size;
     VkImage* vk_images;

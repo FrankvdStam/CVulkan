@@ -41,6 +41,7 @@ void                        free_debug_utils_messenger_extension(   const applic
 
 //VkShaderModule              get_shader_module(                      const application_t* application, const char* path);
 VkPipelineLayout            get_pipeline_layout(                    const application_t* application);
+VkRenderPass                get_render_pass(                        const application_t* application);
 
 
 #endif //CVULKAN_VULKAN_H
