@@ -32,6 +32,8 @@ VkSurfaceFormatKHR          get_surface_format(                     const applic
 VkPresentModeKHR            get_present_mode(                       const application_t* application);
 VkExtent2D                  get_swap_extent(                        const application_t* application);
 VkSwapchainKHR              get_swapchain(                          const application_t* application);
+VkImage*                    get_swapchain_images(                   const application_t* application, uint32_t* image_count);
+VkImageView*                get_image_views(                        const application_t* application);
 
 void                        free_debug_utils_messenger_extension(   const application_t* application);
 

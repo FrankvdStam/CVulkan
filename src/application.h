@@ -47,6 +47,10 @@ typedef struct
     VkExtent2D vk_extent;
     VkSwapchainKHR vk_swapchain;
 
+    uint32_t vk_image_size;
+    VkImage* vk_images;
+    VkImageView* vk_image_views;
+
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;
     swapchain_details_t swapchain_details;
