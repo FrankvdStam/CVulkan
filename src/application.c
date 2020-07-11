@@ -96,6 +96,7 @@ void application_run(application_t* application)
         glfwPollEvents();
         glfwSetWindowShouldClose(application->glfw_window, 1);
     }
+
     application_cleanup(application);
 }
 
