@@ -19,6 +19,7 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, NULL);
     vkDestroyRenderPass(application->vk_device, application->vk_render_pass, NULL);
     vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
     for(uint32_t i = 0; i < application->vk_image_size; i++)
@@ -83,12 +84,10 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_present_mode        = get_present_mode(application);
     application->vk_extent              = get_swap_extent(application);
     application->vk_swapchain           = get_swapchain(application);
-    uint32_t images_size = 0;
-    application->vk_images              = get_swapchain_images(application, &images_size);
-    application->vk_image_size = images_size;
+    application->vk_images              = get_swapchain_images(application, &application->vk_image_size);
     application->vk_image_views         = get_image_views(application);
-    application->vk_pipeline_layout     = get_pipeline_layout(application);
-    application->vk_render_pass          = get_render_pass(application);
+    application->vk_render_pass         = get_render_pass(application);
+    application->vk_pipeline_layout     = get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
 
     return application;
 }

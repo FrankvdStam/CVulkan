@@ -40,8 +40,10 @@ VkImageView*                get_image_views(                        const applic
 void                        free_debug_utils_messenger_extension(   const application_t* application);
 
 //VkShaderModule              get_shader_module(                      const application_t* application, const char* path);
-VkPipelineLayout            get_pipeline_layout(                    const application_t* application);
 VkRenderPass                get_render_pass(                        const application_t* application);
+
+VkPipelineLayout            get_pipeline_layout_and_pipeline(       const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline);
+
 
 
 #endif //CVULKAN_VULKAN_H

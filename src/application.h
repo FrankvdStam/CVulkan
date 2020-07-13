@@ -48,6 +48,7 @@ typedef struct
     VkSwapchainKHR vk_swapchain;
     VkPipelineLayout vk_pipeline_layout;
     VkRenderPass vk_render_pass;
+    VkPipeline vk_graphics_pipeline;
 
     uint32_t vk_image_size;
     VkImage* vk_images;
