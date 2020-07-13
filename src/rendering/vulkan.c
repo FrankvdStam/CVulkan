@@ -4,7 +4,7 @@
 
 #include "vulkan.h"
 
-
+#include "shaders.h"
 
 
 
@@ -601,11 +601,16 @@ VkImageView* get_image_views(const application_t* application)
     return image_views;
 }
 
+enum type
+{
+    fragment,
+    vertex,
+};
 
-VkShaderModule get_shader_module(const application_t* application, const char* path)
+VkShaderModule get_shader_module(const application_t* application, const char* path, enum type stype)
 {
     //Read the shader file into a char buffer
-    char* file_buffer;
+    unsigned char* file_buffer;
     unsigned long file_size;
     read_file(path, &file_buffer, &file_size);
 
@@ -620,26 +625,72 @@ VkShaderModule get_shader_module(const application_t* application, const char* p
     size_t code_size =  file_size/sizeof(uint32_t);
     uint32_t* shader_code = (uint32_t*)malloc(code_size * sizeof(uint32_t));
 
+    //for(int i =0; i < 4; i++)
+    //{
+    //    printf("%i\n", file_buffer[i]);
+    //}
+
     for(size_t i = 0; i < code_size; i++)
     {
         //Calculate the proper index into the char buffer
         size_t start_index = i * sizeof(uint32_t);
 
         //Reinterpret the data in the char buffer as a uint32_t
-        uint32_t number =   (uint32_t)file_buffer[start_index+0] << 24 |
-                            (uint32_t)file_buffer[start_index+1] << 16 |
-                            (uint32_t)file_buffer[start_index+2] << 8  |
-                            (uint32_t)file_buffer[start_index+3];
+        uint32_t number =   (uint32_t) file_buffer[start_index+0]         |
+                            (uint32_t) file_buffer[start_index+1] << 8u   |
+                            (uint32_t) file_buffer[start_index+2] << 16u  |
+                            (uint32_t) file_buffer[start_index+3] << 24u ;
 
         //Add the number to the shader code
         shader_code[i] = number;
     }
 
+    uint32_t* compare_code;
+    uint32_t compare_size;
+    char* name;
+    if(stype == fragment)
+    {
+        name = "fragment";
+        compare_code = fragment_shader_source;
+        compare_size = fragment_shader_source_size;
+    }
+    else
+    {
+        name = "vertex";
+        compare_code = vertex_shader_source;
+        compare_size = vertex_shader_source_size;
+    }
+    bool okay = true;
+    if(code_size != compare_size)
+    {
+        printf("Code size not equal: %zu != %u\n", code_size, compare_size);
+        okay = false;
+    }
+
+    for(size_t i = 0; i < code_size; i++)
+    {
+        if(shader_code[i] != compare_code[i])
+        {
+            printf("At %zu: %u != %u\n", i, shader_code[i], compare_code[i]);
+            okay = false;
+        }
+    }
+
+    if(okay)
+    {
+        printf("%s is okay.\n", name);
+    }
+    else
+    {
+        printf("%s has errors.\n", name);
+    }
+
+
     //printf("converted shader: ");
     //for(size_t i = 0; i < file_size; i++)
     //{
     //    //printf("%u\n", shader_code[i]);
-    //    printf("%x\n", shader_code[i]);
+    //    printf("%u\n", shader_code[i]);
     //}
     //printf("\n");
 
@@ -668,11 +719,11 @@ VkShaderModule get_shader_module(const application_t* application, const char* p
 }
 
 
-VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline)
+void get_pipeline_layout_and_pipeline(const application_t* application)
 {
     //Get the shader modules
-    VkShaderModule vertex_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\vert.spv");
-    VkShaderModule fragment_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\frag.spv");
+    VkShaderModule vertex_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\vert.spv", vertex);
+    VkShaderModule fragment_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\frag.spv", fragment);
 
 
 
@@ -682,7 +733,8 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     vertShaderStageInfo.module = vertex_shader_module;
     vertShaderStageInfo.pName = "main";
     vertShaderStageInfo.flags = 0;
-    vertShaderStageInfo.pNext = NULL;
+    vertShaderStageInfo.pNext = VK_NULL_HANDLE;
+    vertShaderStageInfo.pSpecializationInfo = VK_NULL_HANDLE;
 
     VkPipelineShaderStageCreateInfo fragShaderStageInfo;
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -690,17 +742,17 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     fragShaderStageInfo.module = fragment_shader_module;
     fragShaderStageInfo.pName = "main";
     fragShaderStageInfo.flags = 0;
-    fragShaderStageInfo.pNext = NULL;
-
+    fragShaderStageInfo.pNext = VK_NULL_HANDLE;
+    fragShaderStageInfo.pSpecializationInfo = VK_NULL_HANDLE;
 
     VkPipelineShaderStageCreateInfo shaderStages[2] = {vertShaderStageInfo, fragShaderStageInfo};
 
     VkPipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = NULL; // Optional
+    vertexInputInfo.pVertexBindingDescriptions = VK_NULL_HANDLE; // Optional
     vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = NULL; // Optional
+    vertexInputInfo.pVertexAttributeDescriptions = VK_NULL_HANDLE; // Optional
     vertexInputInfo.flags = 0;
     vertexInputInfo.pNext = 0;
 
@@ -709,7 +761,7 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = VK_FALSE;
     inputAssembly.flags = 0;
-    inputAssembly.pNext = NULL;
+    inputAssembly.pNext = VK_NULL_HANDLE;
 
     VkViewport viewport;
     viewport.x = 0.0f;
@@ -731,7 +783,7 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     viewportState.scissorCount = 1;
     viewportState.pScissors = &scissor;
     viewportState.flags = 0;
-    viewportState.pNext = NULL;
+    viewportState.pNext = VK_NULL_HANDLE;
 
     VkPipelineRasterizationStateCreateInfo rasterizer;
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -746,18 +798,18 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     rasterizer.depthBiasClamp = 0.0f; // Optional
     rasterizer.depthBiasSlopeFactor = 0.0f; // Optional
     rasterizer.flags = 0;
-    rasterizer.pNext = NULL;
+    rasterizer.pNext = VK_NULL_HANDLE;
 
     VkPipelineMultisampleStateCreateInfo multisampling;
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
     multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
     multisampling.minSampleShading = 1.0f; // Optional
-    multisampling.pSampleMask = NULL; // Optional
+    multisampling.pSampleMask = VK_NULL_HANDLE; // Optional
     multisampling.alphaToCoverageEnable = VK_FALSE; // Optional
     multisampling.alphaToOneEnable = VK_FALSE; // Optional
     multisampling.flags = 0;
-    multisampling.pNext = NULL;
+    multisampling.pNext = VK_NULL_HANDLE;
 
     VkPipelineColorBlendAttachmentState colorBlendAttachment;
     colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
@@ -780,7 +832,7 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     colorBlending.blendConstants[2] = 0.0f; // Optional
     colorBlending.blendConstants[3] = 0.0f; // Optional
     colorBlending.flags = 0;
-    colorBlending.pNext = NULL;
+    colorBlending.pNext = VK_NULL_HANDLE;
 
     VkDynamicState dynamicStates[] = {
             VK_DYNAMIC_STATE_VIEWPORT,
@@ -792,18 +844,19 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     dynamicState.dynamicStateCount = 2;
     dynamicState.pDynamicStates = dynamicStates;
     dynamicState.flags = 0;
-    dynamicState.pNext = NULL;
+    dynamicState.pNext = VK_NULL_HANDLE;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pSetLayouts = NULL; // Optional
+    pipelineLayoutInfo.pSetLayouts = VK_NULL_HANDLE; // Optional
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
-    pipelineLayoutInfo.pPushConstantRanges = NULL; // Optional
+    pipelineLayoutInfo.pPushConstantRanges = VK_NULL_HANDLE; // Optional
     pipelineLayoutInfo.flags = 0;
-    pipelineLayoutInfo.pNext = NULL;
+    pipelineLayoutInfo.pNext = VK_NULL_HANDLE;
 
-    if (vkCreatePipelineLayout(application->vk_device, &pipelineLayoutInfo, NULL, vk_pipeline_layout) != VK_SUCCESS) {
+    VkPipelineLayout vk_pipeline_layout;
+    if (vkCreatePipelineLayout(application->vk_device, &pipelineLayoutInfo, VK_NULL_HANDLE, &vk_pipeline_layout) != VK_SUCCESS) {
         printf("failed to create pipeline layout!\n");
         exit(1);
     }
@@ -816,18 +869,18 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     pipelineInfo.stageCount = 2;
     pipelineInfo.pStages = shaderStages;
     pipelineInfo.flags = 0;
-    pipelineInfo.pNext = NULL;
+    pipelineInfo.pNext = VK_NULL_HANDLE;
 
     pipelineInfo.pVertexInputState = &vertexInputInfo;
     pipelineInfo.pInputAssemblyState = &inputAssembly;
     pipelineInfo.pViewportState = &viewportState;
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = NULL; // Optional
+    pipelineInfo.pDepthStencilState = VK_NULL_HANDLE; // Optional
     pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = NULL; // Optional
+    pipelineInfo.pDynamicState = VK_NULL_HANDLE; // Optional
 
-    pipelineInfo.layout = *vk_pipeline_layout;
+    pipelineInfo.layout = vk_pipeline_layout;
 
     pipelineInfo.renderPass = application->vk_render_pass;
     pipelineInfo.subpass = 0;
@@ -835,8 +888,16 @@ VkPipelineLayout get_pipeline_layout_and_pipeline(const application_t* applicati
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
+    VkPipeline vk_graphics_pipeline;
 
-    if (vkCreateGraphicsPipelines(application->vk_device, VK_NULL_HANDLE, 1, &pipelineInfo, NULL, vk_graphics_pipeline) != VK_SUCCESS) {
+    if (vkCreateGraphicsPipelines(
+            application->vk_device,     //VkDevice device
+            VK_NULL_HANDLE,             //VkPipelineCache pipelineCache
+            1,                          //uint32_t createInfoCount
+            &pipelineInfo,              //const VkGraphicsPipelineCreateInfo *pCreateInfos
+            VK_NULL_HANDLE,             //const VkAllocationCallbacks *pAllocator
+            &vk_graphics_pipeline       //VkPipeline *pPipelines
+            ) != VK_SUCCESS) {
         printf("failed to create graphics pipeline.\n");
     }
     printf("Created pipeline\n");

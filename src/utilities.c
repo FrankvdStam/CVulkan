@@ -5,7 +5,7 @@
 #include "utilities.h"
 #include "common.h"
 
-void read_file(const char* file_path, char** buffer, unsigned long* file_size)
+void read_file(const char* file_path, unsigned char** buffer, unsigned long* file_size)
 {
     FILE* file;
     //char* buffer;
@@ -25,7 +25,7 @@ void read_file(const char* file_path, char** buffer, unsigned long* file_size)
     fseek(file, 0, SEEK_SET);
 
     //Allocate memory
-    *buffer = (char *)malloc(*file_size + 1);
+    *buffer = (unsigned char *)malloc(*file_size + 1);
     if (!*buffer)
     {
         fprintf(stderr, "Memory error!");

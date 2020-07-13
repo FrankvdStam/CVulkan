@@ -87,7 +87,8 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_images              = get_swapchain_images(application, &application->vk_image_size);
     application->vk_image_views         = get_image_views(application);
     application->vk_render_pass         = get_render_pass(application);
-    application->vk_pipeline_layout     = get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
+
+    get_pipeline_layout_and_pipeline(application);
 
     return application;
 }
