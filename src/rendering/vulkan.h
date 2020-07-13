@@ -42,7 +42,7 @@ void                        free_debug_utils_messenger_extension(   const applic
 //VkShaderModule              get_shader_module(                      const application_t* application, const char* path);
 VkRenderPass                get_render_pass(                        const application_t* application);
 
-void                        get_pipeline_layout_and_pipeline(       const application_t* application);
+void                        get_pipeline_layout_and_pipeline(       const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline);
 
 
 

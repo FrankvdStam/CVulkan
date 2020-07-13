@@ -4,12 +4,6 @@
 
 #include "vulkan.h"
 
-#include "shaders.h"
-
-
-
-//========================================================================================================================================
-//Private
 
 //========================================================================================================================================
 //surface
@@ -625,82 +619,25 @@ VkShaderModule get_shader_module(const application_t* application, const char* p
     size_t code_size =  file_size/sizeof(uint32_t);
     uint32_t* shader_code = (uint32_t*)malloc(code_size * sizeof(uint32_t));
 
-    //for(int i =0; i < 4; i++)
-    //{
-    //    printf("%i\n", file_buffer[i]);
-    //}
-
     for(size_t i = 0; i < code_size; i++)
     {
         //Calculate the proper index into the char buffer
         size_t start_index = i * sizeof(uint32_t);
 
         //Reinterpret the data in the char buffer as a uint32_t
-        uint32_t number =   (uint32_t) file_buffer[start_index+0]         |
+         shader_code[i] =   (uint32_t) file_buffer[start_index+0]         |
                             (uint32_t) file_buffer[start_index+1] << 8u   |
                             (uint32_t) file_buffer[start_index+2] << 16u  |
                             (uint32_t) file_buffer[start_index+3] << 24u ;
-
-        //Add the number to the shader code
-        shader_code[i] = number;
     }
 
-    uint32_t* compare_code;
-    uint32_t compare_size;
-    char* name;
-    if(stype == fragment)
-    {
-        name = "fragment";
-        compare_code = fragment_shader_source;
-        compare_size = fragment_shader_source_size;
-    }
-    else
-    {
-        name = "vertex";
-        compare_code = vertex_shader_source;
-        compare_size = vertex_shader_source_size;
-    }
-    bool okay = true;
-    if(code_size != compare_size)
-    {
-        printf("Code size not equal: %zu != %u\n", code_size, compare_size);
-        okay = false;
-    }
-
-    for(size_t i = 0; i < code_size; i++)
-    {
-        if(shader_code[i] != compare_code[i])
-        {
-            printf("At %zu: %u != %u\n", i, shader_code[i], compare_code[i]);
-            okay = false;
-        }
-    }
-
-    if(okay)
-    {
-        printf("%s is okay.\n", name);
-    }
-    else
-    {
-        printf("%s has errors.\n", name);
-    }
-
-
-    //printf("converted shader: ");
-    //for(size_t i = 0; i < file_size; i++)
-    //{
-    //    //printf("%u\n", shader_code[i]);
-    //    printf("%u\n", shader_code[i]);
-    //}
-    //printf("\n");
-
-    //Free the original file buffer
     free(file_buffer);
 
     //Create the shader module
     VkShaderModule vk_shader_module;
     VkShaderModuleCreateInfo create_info;
     create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+
     //apparently the codesize is in bytes.
     create_info.codeSize = file_size;
     create_info.pCode = shader_code;
@@ -719,13 +656,11 @@ VkShaderModule get_shader_module(const application_t* application, const char* p
 }
 
 
-void get_pipeline_layout_and_pipeline(const application_t* application)
+void get_pipeline_layout_and_pipeline(const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline)
 {
     //Get the shader modules
     VkShaderModule vertex_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\vert.spv", vertex);
     VkShaderModule fragment_shader_module = get_shader_module(application, "C:\\projects\\CVulkan\\shaders\\frag.spv", fragment);
-
-
 
     VkPipelineShaderStageCreateInfo vertShaderStageInfo;
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -855,8 +790,7 @@ void get_pipeline_layout_and_pipeline(const application_t* application)
     pipelineLayoutInfo.flags = 0;
     pipelineLayoutInfo.pNext = VK_NULL_HANDLE;
 
-    VkPipelineLayout vk_pipeline_layout;
-    if (vkCreatePipelineLayout(application->vk_device, &pipelineLayoutInfo, VK_NULL_HANDLE, &vk_pipeline_layout) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(application->vk_device, &pipelineLayoutInfo, VK_NULL_HANDLE, vk_pipeline_layout) != VK_SUCCESS) {
         printf("failed to create pipeline layout!\n");
         exit(1);
     }
@@ -880,7 +814,7 @@ void get_pipeline_layout_and_pipeline(const application_t* application)
     pipelineInfo.pColorBlendState = &colorBlending;
     pipelineInfo.pDynamicState = VK_NULL_HANDLE; // Optional
 
-    pipelineInfo.layout = vk_pipeline_layout;
+    pipelineInfo.layout = *vk_pipeline_layout;
 
     pipelineInfo.renderPass = application->vk_render_pass;
     pipelineInfo.subpass = 0;
@@ -888,15 +822,13 @@ void get_pipeline_layout_and_pipeline(const application_t* application)
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE; // Optional
     pipelineInfo.basePipelineIndex = -1; // Optional
 
-    VkPipeline vk_graphics_pipeline;
-
     if (vkCreateGraphicsPipelines(
             application->vk_device,     //VkDevice device
             VK_NULL_HANDLE,             //VkPipelineCache pipelineCache
             1,                          //uint32_t createInfoCount
             &pipelineInfo,              //const VkGraphicsPipelineCreateInfo *pCreateInfos
             VK_NULL_HANDLE,             //const VkAllocationCallbacks *pAllocator
-            &vk_graphics_pipeline       //VkPipeline *pPipelines
+            vk_graphics_pipeline       //VkPipeline *pPipelines
             ) != VK_SUCCESS) {
         printf("failed to create graphics pipeline.\n");
     }
