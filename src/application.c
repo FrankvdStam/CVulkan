@@ -19,10 +19,15 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    free(application->vk_command_buffers);
+
+    vkDestroyCommandPool(application->vk_device, application->vk_command_pool, NULL);
+
     for(size_t i = 0; i < application->image_views_buffers_size; i++)
     {
         vkDestroyFramebuffer(application->vk_device, application->vk_frame_buffers[i], NULL);
     }
+    free(application->vk_frame_buffers);
 
     vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, NULL);
     vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
@@ -94,6 +99,8 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_render_pass         = get_render_pass(application);
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
     application->vk_frame_buffers       = get_frame_buffers(application);
+    application->vk_command_pool        = get_command_pool(application);
+    application->vk_command_buffers     = get_command_buffers(application);
 
     return application;
 }

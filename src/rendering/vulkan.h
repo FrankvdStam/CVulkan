@@ -44,7 +44,8 @@ VkRenderPass                get_render_pass(                        const applic
 
 void                        get_pipeline_layout_and_pipeline(       const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline);
 VkFramebuffer*              get_frame_buffers(                      const application_t* application);
-
+VkCommandPool               get_command_pool(                       const application_t* application);
+VkCommandBuffer*            get_command_buffers(                    const application_t* application);
 
 
 #endif //CVULKAN_VULKAN_H

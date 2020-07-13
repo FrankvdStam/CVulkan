@@ -49,11 +49,13 @@ typedef struct
     VkPipelineLayout vk_pipeline_layout;
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
+    VkCommandPool vk_command_pool;
 
     uint32_t image_views_buffers_size;
     VkImage* vk_images;
     VkImageView* vk_image_views;
     VkFramebuffer* vk_frame_buffers;
+    VkCommandBuffer* vk_command_buffers;
 
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;

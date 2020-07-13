@@ -916,3 +916,37 @@ VkFramebuffer* get_frame_buffers(const application_t* application)
     printf("Created framebuffers\n");
     return vk_frame_buffers;
 }
+
+
+VkCommandPool get_command_pool(const application_t* application)
+{
+    VkCommandPool vk_command_pool;
+    VkCommandPoolCreateInfo pool_info;
+    pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_info.queueFamilyIndex = application->queue_family_indices.graphics_family_index;
+    pool_info.flags = 0;
+    pool_info.pNext = VK_NULL_HANDLE;
+
+    if (vkCreateCommandPool(application->vk_device, &pool_info, VK_NULL_HANDLE, &vk_command_pool) != VK_SUCCESS) {
+        printf("failed to create command pool!\n");
+    }
+    printf("Created command pool\n");
+    return vk_command_pool;
+}
+
+VkCommandBuffer* get_command_buffers(const application_t* application)
+{
+    VkCommandBuffer* vk_command_buffer = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * application->image_views_buffers_size);
+
+    VkCommandBufferAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = application->vk_command_pool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = application->image_views_buffers_size;
+    allocInfo.pNext = VK_NULL_HANDLE;
+
+    if (vkAllocateCommandBuffers(application->vk_device, &allocInfo, vk_command_buffer) != VK_SUCCESS) {
+        printf("failed to allocate command buffers!");
+    }
+    return vk_command_buffer;
+}
