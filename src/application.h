@@ -50,9 +50,10 @@ typedef struct
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
 
-    uint32_t vk_image_size;
+    uint32_t image_views_buffers_size;
     VkImage* vk_images;
     VkImageView* vk_image_views;
+    VkFramebuffer* vk_frame_buffers;
 
     VkSurfaceKHR vk_surface;
     queue_family_indices_t queue_family_indices;

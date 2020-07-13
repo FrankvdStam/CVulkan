@@ -19,10 +19,15 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    {
+        vkDestroyFramebuffer(application->vk_device, application->vk_frame_buffers[i], NULL);
+    }
+
     vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, NULL);
     vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
     vkDestroyRenderPass(application->vk_device, application->vk_render_pass, NULL);
-    for(uint32_t i = 0; i < application->vk_image_size; i++)
+    for(uint32_t i = 0; i < application->image_views_buffers_size; i++)
     {
         vkDestroyImageView(application->vk_device, application->vk_image_views[i], NULL);
     }
@@ -84,10 +89,11 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_present_mode        = get_present_mode(application);
     application->vk_extent              = get_swap_extent(application);
     application->vk_swapchain           = get_swapchain(application);
-    application->vk_images              = get_swapchain_images(application, &application->vk_image_size);
+    application->vk_images              = get_swapchain_images(application, &application->image_views_buffers_size);
     application->vk_image_views         = get_image_views(application);
     application->vk_render_pass         = get_render_pass(application);
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
+    application->vk_frame_buffers       = get_frame_buffers(application);
 
     return application;
 }

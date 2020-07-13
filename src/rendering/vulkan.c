@@ -567,9 +567,9 @@ VkImage* get_swapchain_images(const application_t* application, uint32_t* image_
 VkImageView* get_image_views(const application_t* application)
 {
 
-    VkImageView* image_views = (VkImageView*)malloc(sizeof(VkImageView) * application->vk_image_size);
+    VkImageView* image_views = (VkImageView*)malloc(sizeof(VkImageView) * application->image_views_buffers_size);
 
-    for(uint32_t i = 0; i < application->vk_image_size; i++)
+    for(uint32_t i = 0; i < application->image_views_buffers_size; i++)
     {
         VkImageViewCreateInfo createInfo;
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -890,9 +890,29 @@ VkRenderPass get_render_pass(const application_t* application)
     return vk_render_pass;
 }
 
-//VkPipeline get_graphics_pipeline(const application_t* application)
-//{
-//
-//
-//    return vk_graphics_pipeline;
-//}
+VkFramebuffer* get_frame_buffers(const application_t* application)
+{
+    VkFramebuffer* vk_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * application->image_views_buffers_size);
+
+    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    {
+        VkImageView attachments[] = {application->vk_image_views[i]};
+
+        VkFramebufferCreateInfo framebuffer_info;
+        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_info.renderPass = application->vk_render_pass;
+        framebuffer_info.attachmentCount = 1;
+        framebuffer_info.pAttachments = attachments;
+        framebuffer_info.width = application->vk_extent.width;
+        framebuffer_info.height = application->vk_extent.height;
+        framebuffer_info.layers = 1;
+        framebuffer_info.flags = 0;
+        framebuffer_info.pNext = VK_NULL_HANDLE;
+
+        if (vkCreateFramebuffer(application->vk_device, &framebuffer_info, VK_NULL_HANDLE, &vk_frame_buffers[i]) != VK_SUCCESS) {
+            printf("failed to create framebuffer!\n");
+        }
+    }
+    printf("Created framebuffers\n");
+    return vk_frame_buffers;
+}

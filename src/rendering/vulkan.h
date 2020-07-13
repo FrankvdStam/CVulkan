@@ -43,6 +43,7 @@ void                        free_debug_utils_messenger_extension(   const applic
 VkRenderPass                get_render_pass(                        const application_t* application);
 
 void                        get_pipeline_layout_and_pipeline(       const application_t* application, VkPipelineLayout* vk_pipeline_layout, VkPipeline* vk_graphics_pipeline);
+VkFramebuffer*              get_frame_buffers(                      const application_t* application);
 
 
 
