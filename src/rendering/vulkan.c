@@ -950,3 +950,19 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
     }
     return vk_command_buffer;
 }
+
+VkSemaphore get_semaphore(const application_t* application)
+{
+    VkSemaphore semaphore;
+    VkSemaphoreCreateInfo semaphoreInfo;
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphoreInfo.flags = 0;
+    semaphoreInfo.pNext = VK_NULL_HANDLE;
+
+    if (vkCreateSemaphore(application->vk_device, &semaphoreInfo, VK_NULL_HANDLE, &semaphore) != VK_SUCCESS)
+    {
+        printf("failed to create semaphore!");
+    }
+
+    return semaphore;
+}

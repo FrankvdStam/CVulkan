@@ -19,7 +19,10 @@
 //Cleanup
 void application_cleanup(application_t* application)
 {
-    free(application->vk_command_buffers);
+    vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore, NULL);
+    vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore, NULL);
+
+    //free(application->vk_command_buffers);
 
     vkDestroyCommandPool(application->vk_device, application->vk_command_pool, NULL);
 
@@ -81,26 +84,27 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->required_layer_names = get_required_layers(application);
 
     //Can now initialize vulkan
-    application->vk_instance            = get_instance(application);
-    application->vk_debug_messenger     = get_debug_callback(application);
-    application->vk_surface             = get_vk_surface(application);
-    application->vk_physical_device     = get_physical_device(application);
-    application->queue_family_indices   = get_queue_family_indices(application);
-    application->vk_device              = get_logical_device(application);
-    application->vk_graphics_queue      = get_graphics_queue(application);
-    application->vk_present_queue       = get_present_queue(application);
-    application->swapchain_details      = get_swapchain_details(application);
-    application->vk_surface_format      = get_surface_format(application);
-    application->vk_present_mode        = get_present_mode(application);
-    application->vk_extent              = get_swap_extent(application);
-    application->vk_swapchain           = get_swapchain(application);
-    application->vk_images              = get_swapchain_images(application, &application->image_views_buffers_size);
-    application->vk_image_views         = get_image_views(application);
-    application->vk_render_pass         = get_render_pass(application);
+    application->vk_instance                    = get_instance(application);
+    application->vk_debug_messenger             = get_debug_callback(application);
+    application->vk_surface                     = get_vk_surface(application);
+    application->vk_physical_device             = get_physical_device(application);
+    application->queue_family_indices           = get_queue_family_indices(application);
+    application->vk_device                      = get_logical_device(application);
+    application->vk_graphics_queue              = get_graphics_queue(application);
+    application->vk_present_queue               = get_present_queue(application);
+    application->swapchain_details              = get_swapchain_details(application);
+    application->vk_surface_format              = get_surface_format(application);
+    application->vk_present_mode                = get_present_mode(application);
+    application->vk_extent                      = get_swap_extent(application);
+    application->vk_swapchain                   = get_swapchain(application);
+    application->vk_images                      = get_swapchain_images(application, &application->image_views_buffers_size);
+    application->vk_image_views                 = get_image_views(application);
+    application->vk_render_pass                 = get_render_pass(application);
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
-    application->vk_frame_buffers       = get_frame_buffers(application);
-    application->vk_command_pool        = get_command_pool(application);
-    application->vk_command_buffers     = get_command_buffers(application);
+    application->vk_frame_buffers               = get_frame_buffers(application);
+    application->vk_command_pool                = get_command_pool(application);
+    application->vk_image_available_semaphore   = get_semaphore(application);
+    application->vk_render_finished_semaphore   = get_semaphore(application);
 
     return application;
 }

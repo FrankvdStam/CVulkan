@@ -46,6 +46,6 @@ void                        get_pipeline_layout_and_pipeline(       const applic
 VkFramebuffer*              get_frame_buffers(                      const application_t* application);
 VkCommandPool               get_command_pool(                       const application_t* application);
 VkCommandBuffer*            get_command_buffers(                    const application_t* application);
-
+VkSemaphore                 get_semaphore(                          const application_t* application);
 
 #endif //CVULKAN_VULKAN_H
