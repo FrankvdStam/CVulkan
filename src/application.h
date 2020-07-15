@@ -57,6 +57,7 @@ typedef struct
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;
     VkFence* vk_fences;
+    VkFence* vk_image_in_flight_fences;
 
     uint32_t image_views_buffers_size;
     VkImage* vk_images;

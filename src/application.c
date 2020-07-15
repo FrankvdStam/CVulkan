@@ -25,6 +25,15 @@ void drawFrame(application_t* application)
 
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
+
+    // Check if a previous frame is using this image (i.e. there is its fence to wait on)
+    if (application->vk_image_in_flight_fences[imageIndex] != VK_NULL_HANDLE) {
+        vkWaitForFences(application->vk_device, 1, &application->vk_image_in_flight_fences[imageIndex], VK_TRUE, UINT64_MAX);
+    }
+    // Mark the image as now being in use by this frame
+    application->vk_image_in_flight_fences[imageIndex] = application->vk_fences[application->current_frame];
+
+
     if(result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         application_rebuild_swapchain(application);
@@ -73,7 +82,7 @@ void drawFrame(application_t* application)
     application->current_frame = (application->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
     static int frames = 0;
-    printf("f: %i\n", frames++);
+    printf("frame: %i, iff: %zu, ii: %u\n", frames++, application->current_frame, imageIndex);
 }
 
 
@@ -90,6 +99,7 @@ void application_cleanup(application_t* application)
     free(application->vk_image_available_semaphore);
     free(application->vk_render_finished_semaphore);
     free(application->vk_fences);
+    free(application->vk_image_in_flight_fences);
 
     free(application->vk_command_buffers);
 
@@ -185,7 +195,11 @@ application_t* application_init(int window_with, int window_height, char* title,
         application->vk_fences[i]                    = get_fence(application);
     }
 
-
+    application->vk_image_in_flight_fences    = (VkFence*)    malloc(sizeof(VkFence)     * application->image_views_buffers_size);
+    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    {
+        application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
+    }
     return application;
 }
 
