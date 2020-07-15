@@ -868,16 +868,25 @@ VkRenderPass get_render_pass(const application_t* application)
     subpass.pPreserveAttachments = NULL;
     subpass.pInputAttachments = NULL;
 
+    VkSubpassDependency dependency;
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = 0;
+
     VkRenderPassCreateInfo render_pass_info;
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_info.attachmentCount = 1;
     render_pass_info.pAttachments = &color_attachment;
     render_pass_info.subpassCount = 1;
     render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 0;
     render_pass_info.flags = 0;
     render_pass_info.pNext = NULL;
-    render_pass_info.pDependencies = NULL;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
 
     VkRenderPass vk_render_pass;
     if (vkCreateRenderPass(application->vk_device, &render_pass_info, NULL, &vk_render_pass) != VK_SUCCESS)
@@ -945,11 +954,54 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
     allocInfo.commandBufferCount = application->image_views_buffers_size;
     allocInfo.pNext = VK_NULL_HANDLE;
 
-    if (vkAllocateCommandBuffers(application->vk_device, &allocInfo, vk_command_buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(application->vk_device, &allocInfo, vk_command_buffer) != VK_SUCCESS)
+    {
         printf("failed to allocate command buffers!");
     }
+
+    for (size_t i = 0; i < application->image_views_buffers_size; i++) {
+        VkCommandBufferBeginInfo beginInfo;
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        beginInfo.flags = 0;
+        beginInfo.pNext = VK_NULL_HANDLE;
+        beginInfo.pInheritanceInfo = VK_NULL_HANDLE;
+
+        if (vkBeginCommandBuffer(vk_command_buffer[i], &beginInfo) != VK_SUCCESS)
+        {
+            printf("failed to begin recording command buffer!\n");
+        }
+
+        VkRenderPassBeginInfo renderPassInfo;
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = application->vk_render_pass;
+        renderPassInfo.framebuffer = application->vk_frame_buffers[i];
+        renderPassInfo.renderArea.offset.x = 0;
+        renderPassInfo.renderArea.offset.y = 0;
+        renderPassInfo.renderArea.extent = application->vk_extent;
+        renderPassInfo.pNext = VK_NULL_HANDLE;
+
+        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        renderPassInfo.clearValueCount = 1;
+        renderPassInfo.pClearValues = &clearColor;
+
+        vkCmdBeginRenderPass(vk_command_buffer[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        vkCmdBindPipeline(vk_command_buffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, application->vk_graphics_pipeline);
+
+        vkCmdDraw(vk_command_buffer[i], 3, 1, 0, 0);
+
+        vkCmdEndRenderPass(vk_command_buffer[i]);
+
+        if (vkEndCommandBuffer(vk_command_buffer[i]) != VK_SUCCESS)
+        {
+            printf("failed to record command buffer!\n");
+        }
+    }
+
+
     return vk_command_buffer;
 }
+
 
 VkSemaphore get_semaphore(const application_t* application)
 {
@@ -963,6 +1015,7 @@ VkSemaphore get_semaphore(const application_t* application)
     {
         printf("failed to create semaphore!");
     }
+    printf("Created semaphore!\n");
 
     return semaphore;
 }

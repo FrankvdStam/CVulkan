@@ -12,17 +12,72 @@
 #include "rendering/vulkan.h"
 
 
+
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 //========================================================================================================================================
 //Private
+
+void drawFrame(application_t* application)
+{
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
+
+    VkSubmitInfo submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = VK_NULL_HANDLE;
+
+    VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &application->vk_image_available_semaphore[application->current_frame];
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &application->vk_command_buffers[imageIndex];
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &application->vk_render_finished_semaphore[application->current_frame];
+
+    if (vkQueueSubmit(application->vk_graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+        printf("failed to submit draw command buffer!\n");
+    }
+
+
+
+    VkPresentInfoKHR presentInfo;
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &application->vk_render_finished_semaphore[application->current_frame];
+    presentInfo.pNext = VK_NULL_HANDLE;
+
+    VkSwapchainKHR swapChains[] = {application->vk_swapchain};
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapChains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    presentInfo.pResults = NULL; // Optional
+
+    vkQueuePresentKHR(application->vk_present_queue, &presentInfo);
+    vkQueueWaitIdle(application->vk_present_queue);
+
+    application->current_frame = (application->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
 
 //========================================================================================================================================
 //Cleanup
 void application_cleanup(application_t* application)
 {
-    vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore, NULL);
-    vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore, NULL);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
+        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
+    }
+    free(application->vk_image_available_semaphore);
+    free(application->vk_image_available_semaphore);
 
-    //free(application->vk_command_buffers);
+    free(application->vk_command_buffers);
 
     vkDestroyCommandPool(application->vk_device, application->vk_command_pool, NULL);
 
@@ -74,6 +129,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->window_height = window_height;
     application->title = (char*)malloc(sizeof(char) * strlen(title));
     strcpy(application->title, title);
+    application->current_frame = 0;
     application->vulkan_debugging_mode = vulkan_debugging_mode;
 
     //Initialize glfw and get a window
@@ -103,8 +159,16 @@ application_t* application_init(int window_with, int window_height, char* title,
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
     application->vk_frame_buffers               = get_frame_buffers(application);
     application->vk_command_pool                = get_command_pool(application);
-    application->vk_image_available_semaphore   = get_semaphore(application);
-    application->vk_render_finished_semaphore   = get_semaphore(application);
+    application->vk_command_buffers             = get_command_buffers(application);
+
+    application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_render_finished_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        application->vk_image_available_semaphore[i] = get_semaphore(application);
+        application->vk_render_finished_semaphore[i] = get_semaphore(application);
+    }
+
 
     return application;
 }
@@ -114,9 +178,12 @@ void application_run(application_t* application)
 {
     while (!glfwWindowShouldClose(application->glfw_window)) {
         glfwPollEvents();
-        glfwSetWindowShouldClose(application->glfw_window, 1);
-    }
+        //glfwSetWindowShouldClose(application->glfw_window, 1);
+        drawFrame(application);
 
+
+    }
+    vkDeviceWaitIdle(application->vk_device);
     application_cleanup(application);
 }
 

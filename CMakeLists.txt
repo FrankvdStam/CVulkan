@@ -3,7 +3,7 @@ project(CVulkan C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/rendering/extensions.c src/rendering/extensions.h src/utility/string_list.c src/utility/string_list.h src/rendering/vulkan.c src/rendering/vulkan.h src/rendering/shaders.h)
+add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/rendering/extensions.c src/rendering/extensions.h src/utility/string_list.c src/utility/string_list.h src/rendering/vulkan.c src/rendering/vulkan.h)
 
 include_directories(C:/VulkanSDK/1.2.141.2/include/)
 

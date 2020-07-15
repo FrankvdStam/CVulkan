@@ -8,6 +8,8 @@
 #include "common.h"
 #include "utility/string_list.h"
 
+const int MAX_FRAMES_IN_FLIGHT;
+
 typedef enum
 {
     vulkan_debugging_enabled,
@@ -34,6 +36,7 @@ typedef struct
     int window_with;
     int window_height;
     vulkan_debugging_mode_t vulkan_debugging_mode;
+    size_t current_frame;
 
     GLFWwindow* glfw_window;
 
@@ -50,8 +53,8 @@ typedef struct
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
     VkCommandPool vk_command_pool;
-    VkSemaphore vk_image_available_semaphore;
-    VkSemaphore vk_render_finished_semaphore;
+    VkSemaphore* vk_image_available_semaphore;
+    VkSemaphore* vk_render_finished_semaphore;
 
     uint32_t image_views_buffers_size;
     VkImage* vk_images;
@@ -68,6 +71,8 @@ typedef struct
 
     string_list_t* required_extension_names;
     string_list_t* required_layer_names;
+
+
 } application_t;
 
 
