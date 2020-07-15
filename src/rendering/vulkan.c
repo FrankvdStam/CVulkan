@@ -1015,7 +1015,21 @@ VkSemaphore get_semaphore(const application_t* application)
     {
         printf("failed to create semaphore!");
     }
-    printf("Created semaphore!\n");
 
     return semaphore;
 }
+
+VkFence get_fence(const application_t* application)
+{
+    VkFence vk_fence;
+    VkFenceCreateInfo fence_info;
+    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;//Create them in signaled state, else calling wait on them will wait forever
+    fence_info.pNext = VK_NULL_HANDLE;
+
+    if(vkCreateFence(application->vk_device, &fence_info, NULL, &vk_fence) != VK_SUCCESS) {
+        printf("Failed to create fence.");
+    }
+    return vk_fence;
+}
+

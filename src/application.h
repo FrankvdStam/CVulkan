@@ -53,8 +53,10 @@ typedef struct
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
     VkCommandPool vk_command_pool;
+
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;
+    VkFence* vk_fences;
 
     uint32_t image_views_buffers_size;
     VkImage* vk_images;

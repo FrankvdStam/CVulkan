@@ -47,5 +47,6 @@ VkFramebuffer*              get_frame_buffers(                      const applic
 VkCommandPool               get_command_pool(                       const application_t* application);
 VkCommandBuffer*            get_command_buffers(                    const application_t* application);
 VkSemaphore                 get_semaphore(                          const application_t* application);
+VkFence                     get_fence(                              const application_t* application);
 
 #endif //CVULKAN_VULKAN_H

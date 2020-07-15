@@ -20,6 +20,9 @@ const int MAX_FRAMES_IN_FLIGHT = 2;
 
 void drawFrame(application_t* application)
 {
+    vkWaitForFences(application->vk_device, 1, &application->vk_fences[application->current_frame], VK_TRUE, UINT64_MAX);
+    vkResetFences(application->vk_device, 1, &application->vk_fences[application->current_frame]);
+
     uint32_t imageIndex;
     vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
 
@@ -38,7 +41,7 @@ void drawFrame(application_t* application)
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = &application->vk_render_finished_semaphore[application->current_frame];
 
-    if (vkQueueSubmit(application->vk_graphics_queue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
+    if (vkQueueSubmit(application->vk_graphics_queue, 1, &submitInfo, application->vk_fences[application->current_frame]) != VK_SUCCESS) {
         printf("failed to submit draw command buffer!\n");
     }
 
@@ -62,6 +65,9 @@ void drawFrame(application_t* application)
     vkQueueWaitIdle(application->vk_present_queue);
 
     application->current_frame = (application->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+    static int frames = 0;
+    printf("f: %i\n", frames++);
 }
 
 
@@ -73,9 +79,11 @@ void application_cleanup(application_t* application)
     {
         vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
         vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
+        vkDestroyFence(application->vk_device, application->vk_fences[i], NULL);
     }
     free(application->vk_image_available_semaphore);
     free(application->vk_image_available_semaphore);
+    free(application->vk_fences);
 
     free(application->vk_command_buffers);
 
@@ -163,10 +171,12 @@ application_t* application_init(int window_with, int window_height, char* title,
 
     application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
     application->vk_render_finished_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_fences                    = (VkFence*)    malloc(sizeof(VkFence)     * MAX_FRAMES_IN_FLIGHT);
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         application->vk_image_available_semaphore[i] = get_semaphore(application);
         application->vk_render_finished_semaphore[i] = get_semaphore(application);
+        application->vk_fences[i]                    = get_fence(application);
     }
 
 
