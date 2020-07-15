@@ -49,4 +49,6 @@ VkCommandBuffer*            get_command_buffers(                    const applic
 VkSemaphore                 get_semaphore(                          const application_t* application);
 VkFence                     get_fence(                              const application_t* application);
 
+VkBuffer                    get_vertex_buffer(                      const application_t* application, vertex_t* vertices, size_t vertices_size);
+
 #endif //CVULKAN_VULKAN_H

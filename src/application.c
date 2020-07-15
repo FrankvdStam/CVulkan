@@ -62,8 +62,6 @@ void drawFrame(application_t* application)
         printf("failed to submit draw command buffer!\n");
     }
 
-
-
     VkPresentInfoKHR presentInfo;
     presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 
@@ -83,8 +81,8 @@ void drawFrame(application_t* application)
 
     application->current_frame = (application->current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-    static int frames = 0;
-    printf("frame: %i, iff: %zu, ii: %u\n", frames++, application->current_frame, imageIndex);
+    //static int frames = 0;
+    //printf("frame: %i, iff: %zu, ii: %u\n", frames++, application->current_frame, imageIndex);
 }
 
 
@@ -185,6 +183,26 @@ application_t* application_init(int window_with, int window_height, char* title,
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
     application->vk_frame_buffers               = get_frame_buffers(application);
     application->vk_command_pool                = get_command_pool(application);
+
+
+
+
+    application->vk_image_in_flight_fences    = (VkFence*)    malloc(sizeof(VkFence)     * application->image_views_buffers_size);
+    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    {
+        application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
+    }
+
+    vertex_t vertices[] = {
+            {{0.0f, -0.5f}, {0.0f, 0.0f, 0.0f}},
+            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
+            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+    };
+
+
+    application->vk_vertex_buffer = get_vertex_buffer(application, vertices, 15);
+
+
     application->vk_command_buffers             = get_command_buffers(application);
 
     application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
@@ -197,11 +215,9 @@ application_t* application_init(int window_with, int window_height, char* title,
         application->vk_fences[i]                    = get_fence(application);
     }
 
-    application->vk_image_in_flight_fences    = (VkFence*)    malloc(sizeof(VkFence)     * application->image_views_buffers_size);
-    for(size_t i = 0; i < application->image_views_buffers_size; i++)
-    {
-        application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
-    }
+
+
+
     return application;
 }
 

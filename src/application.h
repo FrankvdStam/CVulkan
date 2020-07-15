@@ -7,6 +7,7 @@
 
 #include "common.h"
 #include "utility/string_list.h"
+#include <cglm/cglm.h>
 
 const int MAX_FRAMES_IN_FLIGHT;
 
@@ -29,6 +30,11 @@ typedef struct {
     uint32_t present_modes_size;
     VkPresentModeKHR* vk_surface_present_modes;
 } swapchain_details_t;
+
+typedef struct  {
+    vec2 pos;
+    vec3 color;
+} vertex_t;
 
 typedef struct
 {
@@ -53,6 +59,7 @@ typedef struct
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
     VkCommandPool vk_command_pool;
+    VkBuffer vk_vertex_buffer;
 
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;

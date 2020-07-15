@@ -3,6 +3,7 @@
 //
 
 #include "vulkan.h"
+#include <stddef.h>
 
 
 //========================================================================================================================================
@@ -219,6 +220,7 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 )
 {
     printf("validation layer: %s\n", p_callback_data->pMessage);
+    exit(1);
     return VK_FALSE;
 }
 
@@ -683,14 +685,32 @@ void get_pipeline_layout_and_pipeline(const application_t* application, VkPipeli
 
     VkPipelineShaderStageCreateInfo shaderStages[2] = {vertShaderStageInfo, fragShaderStageInfo};
 
+    VkVertexInputBindingDescription vertex_input_description;
+    vertex_input_description.binding = 0;
+    vertex_input_description.stride = sizeof(vertex_t);
+    vertex_input_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+    VkVertexInputAttributeDescription vertex_attribute_descriptions[2];
+    vertex_attribute_descriptions[0].binding = 0;
+    vertex_attribute_descriptions[0].location = 0;
+    vertex_attribute_descriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+    vertex_attribute_descriptions[0].offset = offsetof(vertex_t, pos);
+
+    vertex_attribute_descriptions[1].binding = 0;
+    vertex_attribute_descriptions[1].location = 1;
+    vertex_attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+    vertex_attribute_descriptions[1].offset = offsetof(vertex_t, color);
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo;
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.pVertexBindingDescriptions = VK_NULL_HANDLE; // Optional
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
-    vertexInputInfo.pVertexAttributeDescriptions = VK_NULL_HANDLE; // Optional
     vertexInputInfo.flags = 0;
     vertexInputInfo.pNext = 0;
+
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.pVertexBindingDescriptions = &vertex_input_description;
+
+    vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    vertexInputInfo.pVertexAttributeDescriptions = vertex_attribute_descriptions;
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly;
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -985,16 +1005,40 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
+        ///vkCmdBeginRenderPass(vk_command_buffer[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+///
+        ///////vkCmdBindPipeline(vk_command_buffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, application->vk_graphics_pipeline);////
+        ///////vkCmdDraw(vk_command_buffer[i], 3, 1, 0, 0);////
+        ///////vkCmdEndRenderPass(vk_command_buffer[i]);
+///
+///
+///
+        ///vkCmdBindPipeline(vk_command_buffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, application->vk_graphics_pipeline);
+        ///VkBuffer vertexBuffers[] = {application->vk_vertex_buffer};
+        ///VkDeviceSize offsets[] = {0};
+        ///vkCmdBindVertexBuffers(vk_command_buffer[i], 0, 1, vertexBuffers, offsets);
+///
+        ///vkCmdDraw(vk_command_buffer[i], 15, 1, 0, 0);
+///
+        ///if (vkEndCommandBuffer(vk_command_buffer[i]) != VK_SUCCESS)
+        ///{
+        ///    printf("failed to record command buffer!\n");
+        ///}
+
+
         vkCmdBeginRenderPass(vk_command_buffer[i], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(vk_command_buffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, application->vk_graphics_pipeline);
 
-        vkCmdDraw(vk_command_buffer[i], 3, 1, 0, 0);
+        VkBuffer vertexBuffers[] = {application->vk_vertex_buffer};
+        VkDeviceSize offsets[] = {0};
+        vkCmdBindVertexBuffers(vk_command_buffer[i], 0, 1, vertexBuffers, offsets);
+
+        vkCmdDraw(vk_command_buffer[i], 15, 1, 0, 0);
 
         vkCmdEndRenderPass(vk_command_buffer[i]);
 
-        if (vkEndCommandBuffer(vk_command_buffer[i]) != VK_SUCCESS)
-        {
+        if (vkEndCommandBuffer(vk_command_buffer[i]) != VK_SUCCESS) {
             printf("failed to record command buffer!\n");
         }
     }
@@ -1033,4 +1077,72 @@ VkFence get_fence(const application_t* application)
     return vk_fence;
 }
 
+VkBuffer get_vertex_buffer(const application_t* application, vertex_t* vertices, size_t vertices_size)
+{
+    VkBuffer vertex_buffer;
 
+    VkBufferCreateInfo bufferInfo;
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(vertex_t) * vertices_size;
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    bufferInfo.flags = 0;
+    bufferInfo.pNext = VK_NULL_HANDLE;
+    bufferInfo.pQueueFamilyIndices = 0;
+    bufferInfo.queueFamilyIndexCount = 0;
+
+    if (vkCreateBuffer(application->vk_device, &bufferInfo, NULL, &vertex_buffer) != VK_SUCCESS) {
+        printf("failed to create vertex buffer!");
+    }
+
+    // vkDestroyBuffer(device, vertexBuffer, nullptr);
+    VkDeviceMemory vertexBufferMemory;
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(application->vk_device, vertex_buffer, &memRequirements);
+
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(application->vk_physical_device, &memProperties);
+
+    uint32_t index;
+
+    //uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+
+    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    uint32_t memory_type = 0;
+    bool found = false;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((memRequirements.memoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            memory_type = i;
+            found = true;
+            break;
+        }
+    }
+
+    if(!found)
+    {
+        printf("Failed to get memory type.");
+        exit(1);
+    }
+
+
+    VkMemoryAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = memory_type;
+    allocInfo.pNext = VK_NULL_HANDLE;
+
+    if (vkAllocateMemory(application->vk_device, &allocInfo, NULL, &vertexBufferMemory) != VK_SUCCESS) {
+        printf("failed to allocate vertex buffer memory!\n");
+    }
+
+    vkBindBufferMemory(application->vk_device, vertex_buffer, vertexBufferMemory, 0);
+
+    void* data;
+    vkMapMemory(application->vk_device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
+    memcpy(data, vertices, (size_t) bufferInfo.size);
+    vkUnmapMemory(application->vk_device, vertexBufferMemory);
+
+    return vertex_buffer;
+}
