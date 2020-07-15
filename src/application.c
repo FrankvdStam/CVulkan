@@ -26,6 +26,13 @@ void drawFrame(application_t* application)
     uint32_t imageIndex;
     VkResult result = vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
 
+    if(result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        application_rebuild_swapchain(application);
+        printf("Rebuilt swapchain.\n");
+        return;
+    }
+
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (application->vk_image_in_flight_fences[imageIndex] != VK_NULL_HANDLE) {
         vkWaitForFences(application->vk_device, 1, &application->vk_image_in_flight_fences[imageIndex], VK_TRUE, UINT64_MAX);
@@ -34,12 +41,7 @@ void drawFrame(application_t* application)
     application->vk_image_in_flight_fences[imageIndex] = application->vk_fences[application->current_frame];
 
 
-    if(result == VK_ERROR_OUT_OF_DATE_KHR)
-    {
-        application_rebuild_swapchain(application);
-        printf("Rebuilt swapchain.\n");
-        return;
-    }
+
 
     VkSubmitInfo submitInfo;
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -245,6 +247,17 @@ void application_rebuild_swapchain(application_t* application)
 
     vkDestroySwapchainKHR(application->vk_device, application->vk_swapchain, NULL);
 
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
+        vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore[i], NULL);
+        vkDestroyFence(application->vk_device, application->vk_fences[i], NULL);
+    }
+    free(application->vk_image_available_semaphore);
+    free(application->vk_render_finished_semaphore);
+    free(application->vk_fences);
+    free(application->vk_image_in_flight_fences);
+
 
     //Now rebuild
     application->window_with = width;
@@ -258,6 +271,23 @@ void application_rebuild_swapchain(application_t* application)
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
     application->vk_frame_buffers               = get_frame_buffers(application);
     application->vk_command_buffers             = get_command_buffers(application);
+
+    application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_render_finished_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_fences                    = (VkFence*)    malloc(sizeof(VkFence)     * MAX_FRAMES_IN_FLIGHT);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        application->vk_image_available_semaphore[i] = get_semaphore(application);
+        application->vk_render_finished_semaphore[i] = get_semaphore(application);
+        application->vk_fences[i]                    = get_fence(application);
+    }
+
+    application->vk_image_in_flight_fences    = (VkFence*)    malloc(sizeof(VkFence)     * application->image_views_buffers_size);
+    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    {
+        application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
+    }
+
 }
 
 
