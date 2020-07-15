@@ -16,6 +16,7 @@ VkSurfaceKHR get_vk_surface(const application_t* application)
         printf("failed to create window surface\n");
         exit(1);
     }
+
     printf("Successfully created window surface\n");
     return vk_surface;
 }
@@ -285,7 +286,7 @@ GLFWwindow* glfw_init_get_window(const application_t* application)
     }
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
     glfw_window = glfwCreateWindow(application->window_with, application->window_height, application->title, NULL, NULL);
 
     if(glfw_window == NULL)
@@ -476,18 +477,18 @@ VkPresentModeKHR get_present_mode(const application_t* application)
 
 VkExtent2D get_swap_extent(const application_t* application)
 {
-    VkSurfaceCapabilitiesKHR capabilities = application->swapchain_details.vk_surface_capabilities;
-    if(application->swapchain_details.vk_surface_capabilities.currentExtent.width != UINT32_MAX)
-    {
-        return application->swapchain_details.vk_surface_capabilities.currentExtent;
-    }
+    //VkSurfaceCapabilitiesKHR capabilities = application->swapchain_details.vk_surface_capabilities;
+    //if(application->swapchain_details.vk_surface_capabilities.currentExtent.width != UINT32_MAX)
+    //{
+    //    return application->swapchain_details.vk_surface_capabilities.currentExtent;
+    //}
 
     //Don't really know if this is any good/how to test it.
     VkExtent2D extent;
     extent.width = application->window_with;
     extent.height = application->window_height;
-    extent.width =  max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, extent.width));
-    extent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, extent.height));
+    //extent.width =  max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, extent.width));
+    //extent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, extent.height));
     return extent;
 }
 
@@ -1006,12 +1007,11 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
 VkSemaphore get_semaphore(const application_t* application)
 {
     VkSemaphore semaphore;
-    VkSemaphoreCreateInfo semaphoreInfo;
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    semaphoreInfo.flags = 0;
-    semaphoreInfo.pNext = VK_NULL_HANDLE;
-
-    if (vkCreateSemaphore(application->vk_device, &semaphoreInfo, VK_NULL_HANDLE, &semaphore) != VK_SUCCESS)
+    VkSemaphoreCreateInfo semaphore_info;
+    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    semaphore_info.flags = 0;
+    semaphore_info.pNext = VK_NULL_HANDLE;
+    if (vkCreateSemaphore(application->vk_device, &semaphore_info, VK_NULL_HANDLE, &semaphore) != VK_SUCCESS)
     {
         printf("failed to create semaphore!");
     }
@@ -1032,4 +1032,5 @@ VkFence get_fence(const application_t* application)
     }
     return vk_fence;
 }
+
 

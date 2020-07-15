@@ -83,6 +83,7 @@ typedef struct
 
 application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode);
 void application_run(application_t* application);
+void application_rebuild_swapchain(application_t* application);
 //void application_cleanup(application_t* application);
 
 #endif //CVULKAN_APPLICATION_H

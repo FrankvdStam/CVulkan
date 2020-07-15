@@ -24,7 +24,13 @@ void drawFrame(application_t* application)
     vkResetFences(application->vk_device, 1, &application->vk_fences[application->current_frame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(application->vk_device, application->vk_swapchain, UINT64_MAX, application->vk_image_available_semaphore[application->current_frame], VK_NULL_HANDLE, &imageIndex);
+    if(result == VK_ERROR_OUT_OF_DATE_KHR)
+    {
+        application_rebuild_swapchain(application);
+        printf("Rebuilt swapchain.\n");
+        return;
+    }
 
     VkSubmitInfo submitInfo;
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -78,11 +84,11 @@ void application_cleanup(application_t* application)
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
-        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
+        vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore[i], NULL);
         vkDestroyFence(application->vk_device, application->vk_fences[i], NULL);
     }
     free(application->vk_image_available_semaphore);
-    free(application->vk_image_available_semaphore);
+    free(application->vk_render_finished_semaphore);
     free(application->vk_fences);
 
     free(application->vk_command_buffers);
@@ -198,7 +204,47 @@ void application_run(application_t* application)
 }
 
 
+void application_rebuild_swapchain(application_t* application)
+{
+    int width, height;
+    glfwGetFramebufferSize(application->glfw_window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(application->glfw_window, &width, &height);
+        glfwWaitEvents();
+    }
 
+    vkDeviceWaitIdle(application->vk_device);
+
+    //First cleanup everything related to the current swapchain that we can't reuse later
+    for (size_t i = 0; i < application->image_views_buffers_size; i++) {
+        vkDestroyFramebuffer(application->vk_device, application->vk_frame_buffers[i], NULL);
+    }
+
+    vkFreeCommandBuffers(application->vk_device, application->vk_command_pool, application->image_views_buffers_size,  application->vk_command_buffers);
+    vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, NULL);
+    vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
+    vkDestroyRenderPass(application->vk_device, application->vk_render_pass, NULL);
+
+    for (size_t i = 0; i < application->image_views_buffers_size; i++) {
+        vkDestroyImageView(application->vk_device, application->vk_image_views[i], NULL);
+    }
+
+    vkDestroySwapchainKHR(application->vk_device, application->vk_swapchain, NULL);
+
+
+    //Now rebuild
+    application->window_with = width;
+    application->window_height = height;
+
+    application->vk_extent                      = get_swap_extent(application);
+    application->vk_swapchain                   = get_swapchain(application);
+    application->vk_images                      = get_swapchain_images(application, &application->image_views_buffers_size);
+    application->vk_image_views                 = get_image_views(application);
+    application->vk_render_pass                 = get_render_pass(application);
+    get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
+    application->vk_frame_buffers               = get_frame_buffers(application);
+    application->vk_command_buffers             = get_command_buffers(application);
+}
 
 
 
