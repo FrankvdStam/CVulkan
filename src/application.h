@@ -59,7 +59,9 @@ typedef struct
     VkRenderPass vk_render_pass;
     VkPipeline vk_graphics_pipeline;
     VkCommandPool vk_command_pool;
+
     VkBuffer vk_vertex_buffer;
+    VkDeviceMemory vertex_buffer_memory;
 
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;

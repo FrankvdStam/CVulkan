@@ -1077,7 +1077,7 @@ VkFence get_fence(const application_t* application)
     return vk_fence;
 }
 
-VkBuffer get_vertex_buffer(const application_t* application, vertex_t* vertices, size_t vertices_size)
+VkBuffer get_buffer_temp(const application_t* application, vertex_t* vertices, size_t vertices_size)
 {
     VkBuffer vertex_buffer;
 
@@ -1146,3 +1146,133 @@ VkBuffer get_vertex_buffer(const application_t* application, vertex_t* vertices,
 
     return vertex_buffer;
 }
+
+//private helper
+void get_buffer(const application_t* application, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_property_flags, VkBuffer* buffer, VkDeviceMemory* buffer_memory)
+{
+    VkBufferCreateInfo buffer_info;
+    buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_info.size = size;
+    buffer_info.usage = usage;
+    buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    buffer_info.flags = 0;
+    buffer_info.pNext = VK_NULL_HANDLE;
+    buffer_info.pQueueFamilyIndices = 0;
+    buffer_info.queueFamilyIndexCount = 0;
+
+
+    if (vkCreateBuffer(application->vk_device, &buffer_info, NULL, buffer) != VK_SUCCESS)
+    {
+        printf("failed to create buffer!\n");
+    }
+
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(application->vk_device, *buffer, &memory_requirements);
+
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(application->vk_physical_device, &memProperties);
+
+    VkMemoryAllocateInfo alloc_info;
+    alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    alloc_info.allocationSize = memory_requirements.size;
+    alloc_info.pNext = VK_NULL_HANDLE;
+
+    bool found = false;
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((memory_requirements.memoryTypeBits & (1u << i)) && (memProperties.memoryTypes[i].propertyFlags & memory_property_flags) == memory_property_flags) {
+            alloc_info.memoryTypeIndex = i;
+            found = true;
+            break;
+        }
+    }
+    if(!found)
+    {
+        printf("Failed to get memory type.");
+        exit(1);
+    }
+
+
+
+
+    if (vkAllocateMemory(application->vk_device, &alloc_info, NULL, buffer_memory) != VK_SUCCESS)
+    {
+        printf("failed to allocate buffer memory!\n");
+    }
+
+    vkBindBufferMemory(application->vk_device, *buffer, *buffer_memory, 0);
+}
+
+//private helper
+void copy_buffer(const application_t* application, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size) {
+    VkCommandBufferAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandPool = application->vk_command_pool;
+    allocInfo.commandBufferCount = 1;
+    allocInfo.pNext = VK_NULL_HANDLE;
+
+    VkCommandBuffer commandBuffer;
+    vkAllocateCommandBuffers(application->vk_device, &allocInfo, &commandBuffer);
+
+    VkCommandBufferBeginInfo beginInfo;
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    beginInfo.pNext = VK_NULL_HANDLE;
+    beginInfo.pInheritanceInfo = NULL;
+
+    vkBeginCommandBuffer(commandBuffer, &beginInfo);
+
+    VkBufferCopy copyRegion;
+    copyRegion.srcOffset = 0; // Optional
+    copyRegion.dstOffset = 0; // Optional
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    vkEndCommandBuffer(commandBuffer);
+
+    VkSubmitInfo submitInfo;
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.pNext = VK_NULL_HANDLE;
+    submitInfo.pSignalSemaphores = NULL;
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = NULL;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitDstStageMask = NULL;
+
+    vkQueueSubmit(application->vk_graphics_queue, 1, &submitInfo, VK_NULL_HANDLE);
+    vkQueueWaitIdle(application->vk_graphics_queue);
+    vkFreeCommandBuffers(application->vk_device, application->vk_command_pool, 1, &commandBuffer);
+}
+
+
+void get_vertex_buffer(const application_t* application, vertex_t* vertices, size_t vertices_size, VkBuffer* vertex_buffer, VkDeviceMemory* vertex_buffer_memory)
+{
+    //Temporary buffers
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    VkDeviceSize bufferSize = sizeof(vertex_t) * vertices_size;
+
+    get_buffer(application, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(application->vk_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices, vertices_size * sizeof(vertex_t));
+    vkUnmapMemory(application->vk_device, stagingBufferMemory);
+
+    get_buffer(application, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
+
+    copy_buffer(application, stagingBuffer, *vertex_buffer, bufferSize);
+
+    vkDestroyBuffer(application->vk_device, stagingBuffer, NULL);
+    vkFreeMemory(application->vk_device, stagingBufferMemory, NULL);
+}
+
+
+
+
+
+
+
+

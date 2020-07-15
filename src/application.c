@@ -90,6 +90,9 @@ void drawFrame(application_t* application)
 //Cleanup
 void application_cleanup(application_t* application)
 {
+    vkDestroyBuffer(application->vk_device, application->vk_vertex_buffer, NULL);
+    vkFreeMemory(application->vk_device, application->vertex_buffer_memory, NULL);
+
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
@@ -194,14 +197,14 @@ application_t* application_init(int window_with, int window_height, char* title,
     }
 
     vertex_t vertices[] = {
-            {{0.0f, -0.5f}, {0.0f, 0.0f, 0.0f}},
+            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
             {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
             {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
     };
 
 
-    application->vk_vertex_buffer = get_vertex_buffer(application, vertices, 15);
-
+  //  application->vk_vertex_buffer = get_vertex_buffer(application, vertices, 15);
+    get_vertex_buffer(application, vertices, 15, &application->vk_vertex_buffer, &application->vertex_buffer_memory);
 
     application->vk_command_buffers             = get_command_buffers(application);
 
