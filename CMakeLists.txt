@@ -5,9 +5,9 @@ set(CMAKE_C_STANDARD 11)
 
 
 
-add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/rendering/extensions.c src/rendering/extensions.h src/utility/string_list.c src/utility/string_list.h src/rendering/vulkan.c src/rendering/vulkan.h)
+add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/rendering/extensions.c src/rendering/extensions.h src/utility/string_list.c src/utility/string_list.h src/rendering/vulkan.c src/rendering/vulkan.h src/rendering/stb_image.h)
 
-target_compile_options(CVulkan PRIVATE -Wall -Wextra -pedantic -Werror -Wno-sign-compare -Wno-unused-parameter)
+target_compile_options(CVulkan PRIVATE -Wall -Wextra -pedantic -Werror -Wno-sign-compare -Wno-unused-parameter -Wno-unused-but-set-variable)
 include_directories(C:/VulkanSDK/1.2.141.2/include/)
 
 add_subdirectory (lib/glfw)

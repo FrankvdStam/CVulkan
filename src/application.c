@@ -11,7 +11,14 @@
 #include <GLFW/glfw3.h>
 #include "rendering/vulkan.h"
 #include <time.h>
+
+#define GLM_FORCE_RADIANS
+#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <cglm/cglm.h>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "rendering/stb_image.h"
+
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
 

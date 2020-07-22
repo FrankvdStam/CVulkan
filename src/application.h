@@ -8,6 +8,7 @@
 #include "common.h"
 #include "utility/string_list.h"
 #include <cglm/cglm.h>
+#include <stdalign.h>
 
 const int MAX_FRAMES_IN_FLIGHT;
 
@@ -38,9 +39,9 @@ typedef struct  {
 
 typedef struct
 {
-    mat4 model;
-    mat4 view;
-    mat4 proj;
+    alignas(16) mat4 model;
+    alignas(16) mat4 view;
+    alignas(16) mat4 proj;
 } uniform_buffer_t;
 
 
