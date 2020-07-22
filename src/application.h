@@ -38,11 +38,20 @@ typedef struct  {
 
 typedef struct
 {
+    mat4 model;
+    mat4 view;
+    mat4 proj;
+} uniform_buffer_t;
+
+
+typedef struct
+{
     char* title;
     int window_with;
     int window_height;
     vulkan_debugging_mode_t vulkan_debugging_mode;
     size_t current_frame;
+    time_t start_time;
 
     GLFWwindow* glfw_window;
 
@@ -57,21 +66,27 @@ typedef struct
     VkSwapchainKHR vk_swapchain;
     VkPipelineLayout vk_pipeline_layout;
     VkRenderPass vk_render_pass;
+    VkDescriptorSetLayout vk_descriptor_set_layout;
     VkPipeline vk_graphics_pipeline;
     VkCommandPool vk_command_pool;
+    VkDescriptorPool vk_descriptor_pool;
+    VkDescriptorSet* vk_descriptor_sets;
 
     VkBuffer vk_vertex_buffer;
     VkDeviceMemory vk_vertex_buffer_memory;
-
     VkBuffer vk_index_buffer;
     VkDeviceMemory vk_index_buffer_memory;
+    size_t vk_uniform_buffers_size;
+    VkBuffer* vk_uniform_buffers;
+    VkDeviceMemory* vk_uniform_buffers_memory;
+
 
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;
     VkFence* vk_fences;
     VkFence* vk_image_in_flight_fences;
 
-    uint32_t image_views_buffers_size;
+    uint32_t swapchain_images_size;
     VkImage* vk_images;
     VkImageView* vk_image_views;
     VkFramebuffer* vk_frame_buffers;

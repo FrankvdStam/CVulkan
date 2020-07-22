@@ -570,9 +570,9 @@ VkImage* get_swapchain_images(const application_t* application, uint32_t* image_
 VkImageView* get_image_views(const application_t* application)
 {
 
-    VkImageView* image_views = (VkImageView*)malloc(sizeof(VkImageView) * application->image_views_buffers_size);
+    VkImageView* image_views = (VkImageView*)malloc(sizeof(VkImageView) * application->swapchain_images_size);
 
-    for(uint32_t i = 0; i < application->image_views_buffers_size; i++)
+    for(uint32_t i = 0; i < application->swapchain_images_size; i++)
     {
         VkImageViewCreateInfo createInfo;
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -747,8 +747,14 @@ void get_pipeline_layout_and_pipeline(const application_t* application, VkPipeli
     rasterizer.rasterizerDiscardEnable = VK_FALSE;
     rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
     rasterizer.lineWidth = 1.0f;
+
+    //rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    //rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+
+
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f; // Optional
     rasterizer.depthBiasClamp = 0.0f; // Optional
@@ -804,12 +810,14 @@ void get_pipeline_layout_and_pipeline(const application_t* application, VkPipeli
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0; // Optional
-    pipelineLayoutInfo.pSetLayouts = VK_NULL_HANDLE; // Optional
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &application->vk_descriptor_set_layout;
     pipelineLayoutInfo.pushConstantRangeCount = 0; // Optional
     pipelineLayoutInfo.pPushConstantRanges = VK_NULL_HANDLE; // Optional
     pipelineLayoutInfo.flags = 0;
     pipelineLayoutInfo.pNext = VK_NULL_HANDLE;
+
+
 
     if (vkCreatePipelineLayout(application->vk_device, &pipelineLayoutInfo, VK_NULL_HANDLE, vk_pipeline_layout) != VK_SUCCESS) {
         printf("failed to create pipeline layout!\n");
@@ -922,9 +930,9 @@ VkRenderPass get_render_pass(const application_t* application)
 
 VkFramebuffer* get_frame_buffers(const application_t* application)
 {
-    VkFramebuffer* vk_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * application->image_views_buffers_size);
+    VkFramebuffer* vk_frame_buffers = (VkFramebuffer*)malloc(sizeof(VkFramebuffer) * application->swapchain_images_size);
 
-    for(size_t i = 0; i < application->image_views_buffers_size; i++)
+    for(size_t i = 0; i < application->swapchain_images_size; i++)
     {
         VkImageView attachments[] = {application->vk_image_views[i]};
 
@@ -966,13 +974,13 @@ VkCommandPool get_command_pool(const application_t* application)
 
 VkCommandBuffer* get_command_buffers(const application_t* application)
 {
-    VkCommandBuffer* vk_command_buffer = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * application->image_views_buffers_size);
+    VkCommandBuffer* vk_command_buffer = (VkCommandBuffer*)malloc(sizeof(VkCommandBuffer) * application->swapchain_images_size);
 
     VkCommandBufferAllocateInfo allocInfo;
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = application->vk_command_pool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = application->image_views_buffers_size;
+    allocInfo.commandBufferCount = application->swapchain_images_size;
     allocInfo.pNext = VK_NULL_HANDLE;
 
     if (vkAllocateCommandBuffers(application->vk_device, &allocInfo, vk_command_buffer) != VK_SUCCESS)
@@ -980,7 +988,7 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
         printf("failed to allocate command buffers!");
     }
 
-    for (size_t i = 0; i < application->image_views_buffers_size; i++) {
+    for (size_t i = 0; i < application->swapchain_images_size; i++) {
         VkCommandBufferBeginInfo beginInfo;
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         beginInfo.flags = 0;
@@ -1035,9 +1043,12 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
 
         vkCmdBindVertexBuffers(vk_command_buffer[i], 0, 1, vertexBuffers, offsets);
         vkCmdBindIndexBuffer(vk_command_buffer[i], application->vk_index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(vk_command_buffer[i], VK_PIPELINE_BIND_POINT_GRAPHICS, application->vk_pipeline_layout, 0, 1, &application->vk_descriptor_sets[i], 0, VK_NULL_HANDLE);
 
         //vkCmdDraw(vk_command_buffer[i], 15, 1, 0, 0);
         vkCmdDrawIndexed(vk_command_buffer[i], 6, 1, 0, 0, 0);
+
+
 
         vkCmdEndRenderPass(vk_command_buffer[i]);
 
@@ -1222,8 +1233,116 @@ void get_index_buffer(const application_t* application, uint16_t* indices, size_
     vkFreeMemory(application->vk_device, stagingBufferMemory, VK_NULL_HANDLE);
 }
 
+VkDescriptorSetLayout get_descriptor_set_layout(const application_t* application)
+{
+    VkDescriptorSetLayout vk_descriptor_set_layout;
+
+    VkDescriptorSetLayoutBinding vk_descriptor_set_layout_binding;
+    vk_descriptor_set_layout_binding.binding = 0;
+    vk_descriptor_set_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    vk_descriptor_set_layout_binding.descriptorCount = 1;
+    vk_descriptor_set_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    vk_descriptor_set_layout_binding.pImmutableSamplers = VK_NULL_HANDLE; // Optional
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo;
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &vk_descriptor_set_layout_binding;
+    layoutInfo.flags = 0;
+    layoutInfo.pNext = VK_NULL_HANDLE;
+
+    if (vkCreateDescriptorSetLayout(application->vk_device, &layoutInfo, VK_NULL_HANDLE, &vk_descriptor_set_layout) != VK_SUCCESS) {
+        printf("failed to create descriptor set layout!\n");
+    }
+    printf("Created descriptor set layout\n");
+    return vk_descriptor_set_layout;
+}
+
+void get_uniform_buffers(const application_t* application, VkBuffer** vk_uniform_buffers, VkDeviceMemory** vk_uniform_buffers_memory, size_t* vk_uniform_buffers_size)
+{
+    VkDeviceSize bufferSize = sizeof(uniform_buffer_t);
+    (*vk_uniform_buffers_size) = application->swapchain_images_size;
+    VkBuffer*       uniform_buffer        = (VkBuffer*      )malloc(sizeof(VkBuffer       ) * application->swapchain_images_size);
+    VkDeviceMemory* uniform_buffer_memory = (VkDeviceMemory*)malloc(sizeof(VkDeviceMemory ) * application->swapchain_images_size);
+
+    for (size_t i = 0; i < application->swapchain_images_size; i++)
+    {
+        get_buffer(application, bufferSize, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &uniform_buffer[i], &uniform_buffer_memory[i]);
+    }
+
+    *vk_uniform_buffers = uniform_buffer;
+    *vk_uniform_buffers_memory = uniform_buffer_memory;
+}
+
+VkDescriptorPool get_descriptor_pool(const application_t* application)
+{
+    VkDescriptorPoolSize poolSize;
+    poolSize.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    poolSize.descriptorCount = application->swapchain_images_size;
+
+    VkDescriptorPoolCreateInfo poolInfo;
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.flags = 0;
+    poolInfo.pNext = VK_NULL_HANDLE;
+    poolInfo.maxSets = application->swapchain_images_size;
+
+    VkDescriptorPool descriptorPool;
+
+    if (vkCreateDescriptorPool(application->vk_device, &poolInfo, VK_NULL_HANDLE, &descriptorPool) != VK_SUCCESS) {
+        printf("failed to create descriptor pool!\n");
+    }
+    return descriptorPool;
+}
+
+VkDescriptorSet* get_descriptor_sets(const application_t* application)
+{
+    VkDescriptorSetLayout layouts[application->swapchain_images_size];
+    for(size_t i = 0; i < application->swapchain_images_size; i++)
+    {
+        layouts[i]= application->vk_descriptor_set_layout;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = application->vk_descriptor_pool;
+    allocInfo.descriptorSetCount = application->swapchain_images_size;
+    allocInfo.pSetLayouts = layouts;
+    allocInfo.pNext = VK_NULL_HANDLE;
 
 
+    VkDescriptorSet* descriptorSets = (VkDescriptorSet*)malloc(sizeof(VkDescriptorSet) * application->swapchain_images_size);
 
+    if (vkAllocateDescriptorSets(application->vk_device, &allocInfo, descriptorSets) != VK_SUCCESS)
+    {
+        printf("failed to allocate descriptor sets!\n");
+        exit(1);
+    }
 
+    for (size_t i = 0; i < application->swapchain_images_size; i++)
+    {
+        VkDescriptorBufferInfo bufferInfo;
+        bufferInfo.buffer = application->vk_uniform_buffers[i];
+        bufferInfo.offset = 0;
+        bufferInfo.range = sizeof(uniform_buffer_t);
 
+        VkWriteDescriptorSet descriptorWrite;
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = descriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.pNext = VK_NULL_HANDLE;
+
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        descriptorWrite.descriptorCount = 1;
+
+        descriptorWrite.pBufferInfo = &bufferInfo;
+        descriptorWrite.pImageInfo = VK_NULL_HANDLE; // Optional
+        descriptorWrite.pTexelBufferView = VK_NULL_HANDLE; // Optional
+
+        vkUpdateDescriptorSets(application->vk_device, 1, &descriptorWrite, 0, VK_NULL_HANDLE);
+    }
+
+    return descriptorSets;
+}

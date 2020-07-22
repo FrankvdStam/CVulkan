@@ -51,4 +51,34 @@ VkFence                     get_fence(                              const applic
 
 void                        get_vertex_buffer(                      const application_t* application, vertex_t* vertices, size_t vertices_size, VkBuffer* vertex_buffer, VkDeviceMemory* vertex_buffer_memory);
 void                        get_index_buffer(                       const application_t* application, uint16_t* indices, size_t indices_size, VkBuffer* index_buffer, VkDeviceMemory* index_buffer_memory);
+VkDescriptorSetLayout       get_descriptor_set_layout(              const application_t* application);
+void                        get_uniform_buffers(                    const application_t* application, VkBuffer** vk_uniform_buffers, VkDeviceMemory** vk_uniform_buffers_memory, size_t* vk_uniform_buffers_size);
+VkDescriptorPool            get_descriptor_pool(                    const application_t* application);
+VkDescriptorSet*            get_descriptor_sets(                    const application_t* application);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #endif //CVULKAN_VULKAN_H
+
+
+
