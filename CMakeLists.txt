@@ -3,8 +3,11 @@ project(CVulkan C)
 
 set(CMAKE_C_STANDARD 11)
 
+
+
 add_executable(CVulkan src/main.c src/common.h src/utilities.c src/utilities.h src/application.h src/application.c src/rendering/extensions.c src/rendering/extensions.h src/utility/string_list.c src/utility/string_list.h src/rendering/vulkan.c src/rendering/vulkan.h)
 
+target_compile_options(CVulkan PRIVATE -Wall -Wextra -pedantic -Werror -Wno-sign-compare -Wno-unused-parameter)
 include_directories(C:/VulkanSDK/1.2.141.2/include/)
 
 add_subdirectory (lib/glfw)
@@ -21,3 +24,4 @@ execute_process(
 target_link_libraries(CVulkan vulkanlib)
 target_link_libraries(CVulkan glfw)
 target_link_libraries(CVulkan cglm)
+

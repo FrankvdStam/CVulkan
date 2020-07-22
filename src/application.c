@@ -27,17 +27,17 @@ void updateUniformBuffer(const application_t* application, uint32_t currentImage
     time_t current_time;
     time(&current_time);
     float passed_time = (float)(current_time - application->start_time);
-    printf("time diff: %f\n", passed_time);
-
-
 
     uniform_buffer_t ubo;
 
 
-    //mat4_zero_initialize(&ubo.model);
-    //mat4_zero_initialize(&ubo.view);
-    //mat4_zero_initialize(&ubo.proj);
+    mat4_zero_initialize(ubo.model);
+    mat4_zero_initialize(ubo.view);
+    mat4_zero_initialize(ubo.proj);
     ubo.model[0][0] = 1.0f;
+    ubo.model[1][1] = 1.0f;
+    ubo.model[2][2] = 1.0f;
+    ubo.model[3][3] = 1.0f;
     //for(size_t y = 0; y < 4u; y++)
     //{
     //    for(size_t x = 0; x < 4u; x++)
@@ -56,7 +56,7 @@ void updateUniformBuffer(const application_t* application, uint32_t currentImage
     vec3 eye = {2.0f, 2.0f, 2.0f};
     vec3 center = {0.0f, 0.0f, 0.0f};
 
-    glm_rotate(ubo.model, passed_time * glm_rad(90.0f), rotate_axis);
+    glm_rotate(ubo.model, passed_time * glm_rad(10.0f), rotate_axis);
     glm_lookat(eye, center, rotate_axis, ubo.view);
     glm_perspective(glm_rad(45.0f), (float)application->vk_extent.width / (float)application->vk_extent.height, 0.1f, 10.0f, ubo.proj);
     ubo.proj[1][1] *= -1;

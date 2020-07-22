@@ -47,27 +47,27 @@ bool extension_exists(const char* extension_name)
     return false;
 }
 
-bool layer_exists(const char* extension_name)
-{
-    load_all_extensions();
-
-    return false;
-}
-
-
-void print_all_extensions()
-{
-    load_all_extensions();
-
-    printf("Available layers:\n");
-    for(unsigned int i = 0; i < layer_count; i++)
-    {
-        printf("%s\n", layer_properties[i].layerName);
-    }
-
-    printf("Available extensions:\n");
-    for(unsigned int i = 0; i < extension_count; i++)
-    {
-        printf("%s\n", extension_properties[i].extensionName);
-    }
-}
+//bool layer_exists(const char* extension_name)
+//{
+//    load_all_extensions();
+//
+//    return false;
+//}
+//
+//
+//void print_all_extensions()
+//{
+//    load_all_extensions();
+//
+//    printf("Available layers:\n");
+//    for(unsigned int i = 0; i < layer_count; i++)
+//    {
+//        printf("%s\n", layer_properties[i].layerName);
+//    }
+//
+//    printf("Available extensions:\n");
+//    for(unsigned int i = 0; i < extension_count; i++)
+//    {
+//        printf("%s\n", extension_properties[i].extensionName);
+//    }
+//}

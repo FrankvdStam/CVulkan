@@ -13,7 +13,7 @@ string_list_t* string_list_init_ptr(size_t initial_size) {
     return list;
 }
 
-string_list_t string_list_init(string_list_t* list, size_t initial_size)
+void string_list_init(string_list_t* list, size_t initial_size)
 {
     list->data = malloc(initial_size * sizeof(char*));
     list->current_index = 0;

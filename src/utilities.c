@@ -38,13 +38,25 @@ void read_file(const char* file_path, unsigned char** buffer, unsigned long* fil
     fclose(file);
 }
 
-void mat4_zero_initialize(mat4* mat)
+void mat4_zero_initialize(mat4 mat)
 {
     for(size_t y = 0; y < 4u; y++)
     {
         for(size_t x = 0; x < 4u; x++)
         {
-            *mat[y][x] = 1.0f;
+            mat[y][x] = 0.0f;
         }
+    }
+}
+
+void mat4_print(mat4 mat)
+{
+    for(size_t y = 0; y < 4u; y++)
+    {
+        for(size_t x = 0; x < 4u; x++)
+        {
+            printf("%f ", mat[y][x]);
+        }
+        printf("\n");
     }
 }

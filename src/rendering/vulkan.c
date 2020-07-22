@@ -796,17 +796,17 @@ void get_pipeline_layout_and_pipeline(const application_t* application, VkPipeli
     colorBlending.flags = 0;
     colorBlending.pNext = VK_NULL_HANDLE;
 
-    VkDynamicState dynamicStates[] = {
-            VK_DYNAMIC_STATE_VIEWPORT,
-            VK_DYNAMIC_STATE_LINE_WIDTH
-    };
+    //VkDynamicState dynamicStates[] = {
+    //        VK_DYNAMIC_STATE_VIEWPORT,
+    //        VK_DYNAMIC_STATE_LINE_WIDTH
+    //};
 
-    VkPipelineDynamicStateCreateInfo dynamicState;
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = 2;
-    dynamicState.pDynamicStates = dynamicStates;
-    dynamicState.flags = 0;
-    dynamicState.pNext = VK_NULL_HANDLE;
+    //VkPipelineDynamicStateCreateInfo dynamicState;
+    //dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    //dynamicState.dynamicStateCount = 2;
+    //dynamicState.pDynamicStates = dynamicStates;
+    //dynamicState.flags = 0;
+    //dynamicState.pNext = VK_NULL_HANDLE;
 
     VkPipelineLayoutCreateInfo pipelineLayoutInfo;
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -1009,7 +1009,7 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
         renderPassInfo.renderArea.extent = application->vk_extent;
         renderPassInfo.pNext = VK_NULL_HANDLE;
 
-        VkClearValue clearColor = {0.0f, 0.0f, 0.0f, 1.0f};
+        VkClearValue clearColor = {{{0.0f, 0.0f, 0.0f, 1.0f}}};
         renderPassInfo.clearValueCount = 1;
         renderPassInfo.pClearValues = &clearColor;
 
