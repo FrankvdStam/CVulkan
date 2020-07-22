@@ -61,7 +61,10 @@ typedef struct
     VkCommandPool vk_command_pool;
 
     VkBuffer vk_vertex_buffer;
-    VkDeviceMemory vertex_buffer_memory;
+    VkDeviceMemory vk_vertex_buffer_memory;
+
+    VkBuffer vk_index_buffer;
+    VkDeviceMemory vk_index_buffer_memory;
 
     VkSemaphore* vk_image_available_semaphore;
     VkSemaphore* vk_render_finished_semaphore;

@@ -50,5 +50,5 @@ VkSemaphore                 get_semaphore(                          const applic
 VkFence                     get_fence(                              const application_t* application);
 
 void                        get_vertex_buffer(                      const application_t* application, vertex_t* vertices, size_t vertices_size, VkBuffer* vertex_buffer, VkDeviceMemory* vertex_buffer_memory);
-
+void                        get_index_buffer(                       const application_t* application, uint16_t* indices, size_t indices_size, VkBuffer* index_buffer, VkDeviceMemory* index_buffer_memory);
 #endif //CVULKAN_VULKAN_H

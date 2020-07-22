@@ -1032,9 +1032,12 @@ VkCommandBuffer* get_command_buffers(const application_t* application)
 
         VkBuffer vertexBuffers[] = {application->vk_vertex_buffer};
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(vk_command_buffer[i], 0, 1, vertexBuffers, offsets);
 
-        vkCmdDraw(vk_command_buffer[i], 15, 1, 0, 0);
+        vkCmdBindVertexBuffers(vk_command_buffer[i], 0, 1, vertexBuffers, offsets);
+        vkCmdBindIndexBuffer(vk_command_buffer[i], application->vk_index_buffer, 0, VK_INDEX_TYPE_UINT16);
+
+        //vkCmdDraw(vk_command_buffer[i], 15, 1, 0, 0);
+        vkCmdDrawIndexed(vk_command_buffer[i], 6, 1, 0, 0, 0);
 
         vkCmdEndRenderPass(vk_command_buffer[i]);
 
@@ -1075,76 +1078,6 @@ VkFence get_fence(const application_t* application)
         printf("Failed to create fence.");
     }
     return vk_fence;
-}
-
-VkBuffer get_buffer_temp(const application_t* application, vertex_t* vertices, size_t vertices_size)
-{
-    VkBuffer vertex_buffer;
-
-    VkBufferCreateInfo bufferInfo;
-    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    bufferInfo.size = sizeof(vertex_t) * vertices_size;
-    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    bufferInfo.flags = 0;
-    bufferInfo.pNext = VK_NULL_HANDLE;
-    bufferInfo.pQueueFamilyIndices = 0;
-    bufferInfo.queueFamilyIndexCount = 0;
-
-    if (vkCreateBuffer(application->vk_device, &bufferInfo, NULL, &vertex_buffer) != VK_SUCCESS) {
-        printf("failed to create vertex buffer!");
-    }
-
-    // vkDestroyBuffer(device, vertexBuffer, nullptr);
-    VkDeviceMemory vertexBufferMemory;
-
-    VkMemoryRequirements memRequirements;
-    vkGetBufferMemoryRequirements(application->vk_device, vertex_buffer, &memRequirements);
-
-    VkPhysicalDeviceMemoryProperties memProperties;
-    vkGetPhysicalDeviceMemoryProperties(application->vk_physical_device, &memProperties);
-
-    uint32_t index;
-
-    //uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
-
-    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    uint32_t memory_type = 0;
-    bool found = false;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((memRequirements.memoryTypeBits & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            memory_type = i;
-            found = true;
-            break;
-        }
-    }
-
-    if(!found)
-    {
-        printf("Failed to get memory type.");
-        exit(1);
-    }
-
-
-    VkMemoryAllocateInfo allocInfo;
-    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = memory_type;
-    allocInfo.pNext = VK_NULL_HANDLE;
-
-    if (vkAllocateMemory(application->vk_device, &allocInfo, NULL, &vertexBufferMemory) != VK_SUCCESS) {
-        printf("failed to allocate vertex buffer memory!\n");
-    }
-
-    vkBindBufferMemory(application->vk_device, vertex_buffer, vertexBufferMemory, 0);
-
-    void* data;
-    vkMapMemory(application->vk_device, vertexBufferMemory, 0, bufferInfo.size, 0, &data);
-    memcpy(data, vertices, (size_t) bufferInfo.size);
-    vkUnmapMemory(application->vk_device, vertexBufferMemory);
-
-    return vertex_buffer;
 }
 
 //private helper
@@ -1269,7 +1202,25 @@ void get_vertex_buffer(const application_t* application, vertex_t* vertices, siz
     vkFreeMemory(application->vk_device, stagingBufferMemory, NULL);
 }
 
+void get_index_buffer(const application_t* application, uint16_t* indices, size_t indices_size, VkBuffer* index_buffer, VkDeviceMemory* index_buffer_memory) {
+    VkDeviceSize bufferSize = sizeof(uint16_t) * indices_size;
 
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    get_buffer(application, bufferSize, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(application->vk_device, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, indices, (size_t) bufferSize);
+    vkUnmapMemory(application->vk_device, stagingBufferMemory);
+
+    get_buffer(application, bufferSize, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
+
+    copy_buffer(application, stagingBuffer, *index_buffer, bufferSize);
+
+    vkDestroyBuffer(application->vk_device, stagingBuffer, VK_NULL_HANDLE);
+    vkFreeMemory(application->vk_device, stagingBufferMemory, VK_NULL_HANDLE);
+}
 
 
 

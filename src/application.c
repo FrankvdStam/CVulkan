@@ -91,7 +91,9 @@ void drawFrame(application_t* application)
 void application_cleanup(application_t* application)
 {
     vkDestroyBuffer(application->vk_device, application->vk_vertex_buffer, NULL);
-    vkFreeMemory(application->vk_device, application->vertex_buffer_memory, NULL);
+    vkDestroyBuffer(application->vk_device, application->vk_index_buffer, NULL);
+    vkFreeMemory(application->vk_device, application->vk_vertex_buffer_memory, NULL);
+    vkFreeMemory(application->vk_device, application->vk_index_buffer_memory, NULL);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -197,14 +199,20 @@ application_t* application_init(int window_with, int window_height, char* title,
     }
 
     vertex_t vertices[] = {
-            {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}},
-            {{-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}}
+            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+            {{0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f}},
+            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
     };
 
+    uint16_t indices[] =
+    {
+            0, 1, 2, 2, 3, 0
+    };
 
   //  application->vk_vertex_buffer = get_vertex_buffer(application, vertices, 15);
-    get_vertex_buffer(application, vertices, 15, &application->vk_vertex_buffer, &application->vertex_buffer_memory);
+    get_vertex_buffer(application, vertices, 15, &application->vk_vertex_buffer, &application->vk_vertex_buffer_memory);
+    get_index_buffer(application, indices, 6, &application->vk_index_buffer, &application->vk_index_buffer_memory);
 
     application->vk_command_buffers             = get_command_buffers(application);
 
