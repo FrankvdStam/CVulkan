@@ -9,6 +9,7 @@
 #include "utility/string_list.h"
 #include <cglm/cglm.h>
 #include <stdalign.h>
+#include "utilities.h"
 
 const int MAX_FRAMES_IN_FLIGHT;
 
@@ -44,6 +45,8 @@ typedef struct
     alignas(16) mat4 proj;
 } uniform_buffer_t;
 
+uniform_buffer_t uniform_buffer_create();
+
 
 typedef struct
 {
@@ -72,6 +75,7 @@ typedef struct
     VkCommandPool vk_command_pool;
     VkDescriptorPool vk_descriptor_pool;
     VkDescriptorSet* vk_descriptor_sets;
+    VkPhysicalDeviceMemoryProperties vk_memory_properties;
 
     VkBuffer vk_vertex_buffer;
     VkDeviceMemory vk_vertex_buffer_memory;

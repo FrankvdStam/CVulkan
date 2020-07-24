@@ -5,9 +5,31 @@
 #include "vulkan.h"
 #include <stddef.h>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 //========================================================================================================================================
 //surface
+
+
+VkPhysicalDeviceMemoryProperties get_memory_properties(const application_t* application)
+{
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(application->vk_physical_device, &memory_properties);
+    return memory_properties;
+}
+
+uint32_t find_memory_index(const application_t* application, uint32_t type_filter, VkMemoryPropertyFlags properties)
+{
+    for (uint32_t i = 0; i < application->vk_memory_properties.memoryTypeCount; i++) {
+        if ((type_filter & (1u << i)) && (application->vk_memory_properties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    printf("Failed to get memory type.");
+    exit(1);
+}
+
 
 VkSurfaceKHR get_vk_surface(const application_t* application)
 {
@@ -1091,7 +1113,6 @@ VkFence get_fence(const application_t* application)
     return vk_fence;
 }
 
-//private helper
 void get_buffer(const application_t* application, VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags memory_property_flags, VkBuffer* buffer, VkDeviceMemory* buffer_memory)
 {
     VkBufferCreateInfo buffer_info;
@@ -1120,23 +1141,7 @@ void get_buffer(const application_t* application, VkDeviceSize size, VkBufferUsa
     alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     alloc_info.allocationSize = memory_requirements.size;
     alloc_info.pNext = VK_NULL_HANDLE;
-
-    bool found = false;
-    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((memory_requirements.memoryTypeBits & (1u << i)) && (memProperties.memoryTypes[i].propertyFlags & memory_property_flags) == memory_property_flags) {
-            alloc_info.memoryTypeIndex = i;
-            found = true;
-            break;
-        }
-    }
-    if(!found)
-    {
-        printf("Failed to get memory type.");
-        exit(1);
-    }
-
-
-
+    alloc_info.memoryTypeIndex = find_memory_index(application, memory_requirements.memoryTypeBits, memory_property_flags);
 
     if (vkAllocateMemory(application->vk_device, &alloc_info, NULL, buffer_memory) != VK_SUCCESS)
     {
@@ -1346,3 +1351,79 @@ VkDescriptorSet* get_descriptor_sets(const application_t* application)
 
     return descriptorSets;
 }
+
+
+
+void createTextureImage(const application_t* application) {
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load("C:\\projects\\CVulkan\\textures\\texture.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    uint32_t image_size  = texWidth * texHeight * 4;
+    VkDeviceSize vk_image_size = (uint64_t)image_size;
+
+    if (!pixels)
+    {
+        printf("failed to load texture image!");
+        exit(1);
+    }
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+
+    get_buffer(application, vk_image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, &stagingBuffer, &stagingBufferMemory);
+
+    void* data;
+    vkMapMemory(application->vk_device, stagingBufferMemory, 0, vk_image_size, 0, &data);
+    memcpy(data, pixels, image_size);
+    vkUnmapMemory(application->vk_device, stagingBufferMemory);
+
+    stbi_image_free(pixels);
+
+    VkImage textureImage;
+    VkDeviceMemory textureImageMemory;
+
+    VkImageCreateInfo imageInfo;
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = texWidth;
+    imageInfo.extent.height =texHeight;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+
+    imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.flags = 0; // Optional
+
+    imageInfo.pNext = VK_NULL_HANDLE;
+
+    if (vkCreateImage(application->vk_device, &imageInfo, VK_NULL_HANDLE, &textureImage) != VK_SUCCESS) {
+        printf("failed to create image!");
+        exit(1);
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(application->vk_device, textureImage, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo;
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = find_memory_index(application, memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (vkAllocateMemory(application->vk_device, &allocInfo, VK_NULL_HANDLE, &textureImageMemory) != VK_SUCCESS) {
+        printf("failed to allocate image memory!");
+        exit(1);
+    }
+
+    vkBindImageMemory(application->vk_device, textureImage, textureImageMemory, 0);
+}
+
+
+
+
+
+
+

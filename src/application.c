@@ -16,14 +16,19 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #include <cglm/cglm.h>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include "rendering/stb_image.h"
-
-
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
 //========================================================================================================================================
 //Private
+uniform_buffer_t uniform_buffer_create()
+{
+    uniform_buffer_t ubo;
+    mat4_zero_initialize(ubo.view);
+    mat4_zero_initialize(ubo.proj);
+    mat4_zero_initialize(ubo.model);
+    return ubo;
+}
+
 void updateUniformBuffer(const application_t* application, uint32_t currentImage) {
     //static auto startTime = std::chrono::high_resolution_clock::now();
 //
@@ -35,33 +40,16 @@ void updateUniformBuffer(const application_t* application, uint32_t currentImage
     time(&current_time);
     float passed_time = (float)(current_time - application->start_time);
 
-    uniform_buffer_t ubo;
-
-
-    mat4_zero_initialize(ubo.model);
-    mat4_zero_initialize(ubo.view);
-    mat4_zero_initialize(ubo.proj);
+    uniform_buffer_t ubo = uniform_buffer_create();
+    //Identity matrix
     ubo.model[0][0] = 1.0f;
     ubo.model[1][1] = 1.0f;
     ubo.model[2][2] = 1.0f;
     ubo.model[3][3] = 1.0f;
-    //for(size_t y = 0; y < 4u; y++)
-    //{
-    //    for(size_t x = 0; x < 4u; x++)
-    //    {
-    //        ubo.model[y][x] = 1.0f;
-    //    }
-    //}
-    //ubo.model = GLM_MAT4_ZERO_INIT;
-//
-    //mat4 m = GLM_MAT4_ZERO_INIT;
-    //ubo.model = m;
 
-
-    vec3 rotate_axis = {0.0f, 0.0f, 1.0f};
-
-    vec3 eye = {2.0f, 2.0f, 2.0f};
-    vec3 center = {0.0f, 0.0f, 0.0f};
+    vec3 rotate_axis    = {0.0f, 0.0f, 1.0f};
+    vec3 eye            = {2.0f, 2.0f, 2.0f};
+    vec3 center         = {0.0f, 0.0f, 0.0f};
 
     glm_rotate(ubo.model, passed_time * glm_rad(10.0f), rotate_axis);
     glm_lookat(eye, center, rotate_axis, ubo.view);
@@ -239,6 +227,7 @@ application_t* application_init(int window_with, int window_height, char* title,
     application->vk_debug_messenger             = get_debug_callback(application);
     application->vk_surface                     = get_vk_surface(application);
     application->vk_physical_device             = get_physical_device(application);
+    application->vk_memory_properties           = get_memory_properties(application);
     application->queue_family_indices           = get_queue_family_indices(application);
     application->vk_device                      = get_logical_device(application);
     application->vk_graphics_queue              = get_graphics_queue(application);
