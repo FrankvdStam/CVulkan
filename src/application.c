@@ -204,10 +204,24 @@ void application_cleanup(application_t* application)
 //========================================================================================================================================
 //public
 
+uint32_t s_vertices_size = 20;
+vertex_t s_vertices[] =
+{
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+uint32_t s_indices_size = 6;
+uint16_t s_indices[] =
+{
+    0, 1, 2, 2, 3, 0
+};
+
 application_t* application_init(int window_with, int window_height, char* title, vulkan_debugging_mode_t vulkan_debugging_mode)
 {
     application_t* application = (application_t*)malloc(sizeof(application_t));
-    application->window_with = window_with;
+    application->window_width = window_with;
     application->window_height = window_height;
     application->title = (char*)malloc(sizeof(char) * strlen(title));
     strcpy(application->title, title);
@@ -257,21 +271,8 @@ application_t* application_init(int window_with, int window_height, char* title,
         application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
     }
 
-    vertex_t vertices[] = {
-            {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
-            {{0.5f, -0.5f}, { 0.0f, 1.0f, 0.0f}},
-            {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
-            {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
-    };
-
-    uint16_t indices[] =
-    {
-            0, 1, 2, 2, 3, 0
-    };
-
-  //  application->vk_vertex_buffer = get_vertex_buffer(application, vertices, 15);
-    get_vertex_buffer(application, vertices, 15, &application->vk_vertex_buffer, &application->vk_vertex_buffer_memory);
-    get_index_buffer(application, indices, 6, &application->vk_index_buffer, &application->vk_index_buffer_memory);
+    get_vertex_buffer(application, s_vertices, s_vertices_size, &application->vk_vertex_buffer, &application->vk_vertex_buffer_memory);
+    get_index_buffer(application, s_indices, s_indices_size, &application->vk_index_buffer, &application->vk_index_buffer_memory);
 
     application->vk_command_buffers             = get_command_buffers(application);
 
@@ -305,7 +306,7 @@ void application_run(application_t* application)
     application_cleanup(application);
 }
 
-
+void create_swapchain(application_t* application);
 void application_rebuild_swapchain(application_t* application)
 {
     int width, height;
@@ -314,50 +315,64 @@ void application_rebuild_swapchain(application_t* application)
         glfwGetFramebufferSize(application->glfw_window, &width, &height);
         glfwWaitEvents();
     }
+    application->window_height = height;
+    application->window_width = width;
+
+    printf("Resize: %ix%i\n", width, height);
+
 
     vkDeviceWaitIdle(application->vk_device);
 
-    //First cleanup everything related to the current swapchain that we can't reuse later
     for (size_t i = 0; i < application->swapchain_images_size; i++) {
-        vkDestroyFramebuffer(application->vk_device, application->vk_frame_buffers[i], NULL);
-        vkDestroyBuffer(application->vk_device, application->vk_uniform_buffers[i], VK_NULL_HANDLE);
-        vkFreeMemory(application->vk_device, application->vk_uniform_buffers_memory[i], VK_NULL_HANDLE);
+        vkDestroyFramebuffer(   application->vk_device, application->vk_frame_buffers[i],               VK_NULL_HANDLE);
+        vkDestroyBuffer(        application->vk_device, application->vk_uniform_buffers[i],             VK_NULL_HANDLE);
+        vkFreeMemory(           application->vk_device, application->vk_uniform_buffers_memory[i],      VK_NULL_HANDLE);
     }
+
+    vkDestroyBuffer(application->vk_device, application->vk_index_buffer, VK_NULL_HANDLE);
+    vkFreeMemory(application->vk_device, application->vk_index_buffer_memory, VK_NULL_HANDLE);
+
     vkDestroyDescriptorPool(application->vk_device, application->vk_descriptor_pool, VK_NULL_HANDLE);
-
     vkFreeCommandBuffers(application->vk_device, application->vk_command_pool, application->swapchain_images_size, application->vk_command_buffers);
-    vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, NULL);
-    vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, NULL);
-    vkDestroyRenderPass(application->vk_device, application->vk_render_pass, NULL);
+    vkDestroyPipeline(application->vk_device, application->vk_graphics_pipeline, VK_NULL_HANDLE);
+    vkDestroyPipelineLayout(application->vk_device, application->vk_pipeline_layout, VK_NULL_HANDLE);
+    vkDestroyRenderPass(application->vk_device, application->vk_render_pass, VK_NULL_HANDLE);
 
     for (size_t i = 0; i < application->swapchain_images_size; i++) {
-        vkDestroyImageView(application->vk_device, application->vk_image_views[i], NULL);
+        vkDestroyImageView(application->vk_device, application->vk_image_views[i], VK_NULL_HANDLE);
     }
 
-    vkDestroySwapchainKHR(application->vk_device, application->vk_swapchain, NULL);
+    vkDestroySwapchainKHR(application->vk_device, application->vk_swapchain, VK_NULL_HANDLE);
 
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], NULL);
-        vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore[i], NULL);
-        vkDestroyFence(application->vk_device, application->vk_fences[i], NULL);
+        vkDestroySemaphore(application->vk_device, application->vk_image_available_semaphore[i], VK_NULL_HANDLE);
+        vkDestroySemaphore(application->vk_device, application->vk_render_finished_semaphore[i], VK_NULL_HANDLE);
+        vkDestroyFence(application->vk_device, application->vk_fences[i], VK_NULL_HANDLE);
     }
+
     free(application->vk_image_available_semaphore);
     free(application->vk_render_finished_semaphore);
     free(application->vk_fences);
+
     free(application->vk_image_in_flight_fences);
     free(application->vk_uniform_buffers);
     free(application->vk_uniform_buffers_memory);
 
     //Now rebuild
-    application->window_with = width;
-    application->window_height = height;
+    create_swapchain(application);
+}
 
+
+
+void create_swapchain(application_t* application)
+{
     application->vk_extent                      = get_swap_extent(application);
     application->vk_swapchain                   = get_swapchain(application);
     application->vk_images                      = get_swapchain_images(application, &application->swapchain_images_size);
     application->vk_image_views                 = get_image_views(application);
     application->vk_render_pass                 = get_render_pass(application);
+    application->vk_descriptor_set_layout       = get_descriptor_set_layout(application);
     get_pipeline_layout_and_pipeline(application, &application->vk_pipeline_layout, &application->vk_graphics_pipeline);
     application->vk_frame_buffers               = get_frame_buffers(application);
     get_uniform_buffers(application, &application->vk_uniform_buffers, &application->vk_uniform_buffers_memory, &application->vk_uniform_buffers_size);
@@ -367,6 +382,7 @@ void application_rebuild_swapchain(application_t* application)
     application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
     application->vk_render_finished_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
     application->vk_fences                    = (VkFence*)    malloc(sizeof(VkFence)     * MAX_FRAMES_IN_FLIGHT);
+
     for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         application->vk_image_available_semaphore[i] = get_semaphore(application);
@@ -379,9 +395,20 @@ void application_rebuild_swapchain(application_t* application)
     {
         application->vk_image_in_flight_fences[i] = VK_NULL_HANDLE;
     }
+
+    application->vk_image_available_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_render_finished_semaphore = (VkSemaphore*)malloc(sizeof(VkSemaphore) * MAX_FRAMES_IN_FLIGHT);
+    application->vk_fences                    = (VkFence*)    malloc(sizeof(VkFence)     * MAX_FRAMES_IN_FLIGHT);
+    for(size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        application->vk_image_available_semaphore[i] = get_semaphore(application);
+        application->vk_render_finished_semaphore[i] = get_semaphore(application);
+        application->vk_fences[i]                    = get_fence(application);
+    }
+
+    application->vk_descriptor_pool             = get_descriptor_pool(application);
+    application->vk_descriptor_sets             = get_descriptor_sets(application);
+
+    get_index_buffer(application, s_indices, s_indices_size, &application->vk_index_buffer, &application->vk_index_buffer_memory);
 }
-
-
-
-
 

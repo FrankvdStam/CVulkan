@@ -51,7 +51,7 @@ uniform_buffer_t uniform_buffer_create();
 typedef struct
 {
     char* title;
-    int window_with;
+    int window_width;
     int window_height;
     vulkan_debugging_mode_t vulkan_debugging_mode;
     size_t current_frame;

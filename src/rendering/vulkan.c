@@ -311,7 +311,7 @@ GLFWwindow* glfw_init_get_window(const application_t* application)
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-    glfw_window = glfwCreateWindow(application->window_with, application->window_height, application->title, NULL, NULL);
+    glfw_window = glfwCreateWindow(application->window_width, application->window_height, application->title, NULL, NULL);
 
     if(glfw_window == NULL)
     {
@@ -509,7 +509,7 @@ VkExtent2D get_swap_extent(const application_t* application)
 
     //Don't really know if this is any good/how to test it.
     VkExtent2D extent;
-    extent.width = application->window_with;
+    extent.width = application->window_width;
     extent.height = application->window_height;
     //extent.width =  max(capabilities.minImageExtent.width, min(capabilities.maxImageExtent.width, extent.width));
     //extent.height = max(capabilities.minImageExtent.height, min(capabilities.maxImageExtent.height, extent.height));
